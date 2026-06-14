@@ -158,11 +158,6 @@
           <h1>🏆 Porra Pololos Mundial 2026</h1>
           <p class="subtitle">Marcador de porras, resultados actuales, clasificación provisional y predicciones de cada participante.</p>
         </div>
-        <div class="hero-actions">
-          <button onclick="window.print()">Imprimir / PDF</button>
-          <button class="secondary" onclick="openAll()">Abrir todo</button>
-          <button class="secondary" onclick="closeAll()">Cerrar todo</button>
-        </div>
       </div>
       <div class="kpi-grid" style="margin-top:22px">
         <div class="kpi"><div class="value" id="kpi-played">0</div><div class="label">partidos con resultado</div></div>
@@ -175,14 +170,19 @@
 
   <nav class="nav">
     <div class="wrap">
+      <a href="#puntos">Clasificación provisional</a>
       <a href="#puntuacion">Sistema de puntuación</a>
-      <a href="#resultados">Resultados y clasificación</a>
-      <a href="#puntos">Puntos provisionales</a>
+      <a href="#resultados">Resultados y grupos</a>
       <a href="#porras">Porras</a>
     </div>
   </nav>
 
   <main class="wrap">
+    <section id="puntos" class="section">
+      <div class="section-title"><div><h2>📊 Clasificación provisional</h2><p>Ranking provisional de la porra calculado con los clasificados provisionales actuales.</p></div></div>
+      <div class="card"><table><thead><tr><th>Puesto</th><th>Participante</th><th class="total-points">Puntos</th><th>Detalle</th></tr></thead><tbody id="provisional-body"></tbody></table></div>
+    </section>
+
     <section id="puntuacion" class="section">
       <div class="section-title"><div><h2>📋 Sistema de puntuación</h2><p>Se han eliminado los conceptos de Signo 1X2 y Resultado exacto.</p></div></div>
       <div class="card"><table><thead><tr><th>Concepto</th><th class="points">Puntos</th></tr></thead><tbody id="scoring-body"></tbody></table></div>
@@ -196,11 +196,6 @@
       </div>
       <div class="section-title" style="margin-top:24px"><div><h2>🌍 Clasificación de grupos</h2></div></div>
       <div id="standings" class="grid grid-groups"></div>
-    </section>
-
-    <section id="puntos" class="section">
-      <div class="section-title"><div><h2>📊 Puntos provisionales</h2><p>Puntuación calculada contra los clasificados provisionales actuales.</p></div></div>
-      <div class="card"><table><thead><tr><th>Puesto</th><th>Participante</th><th class="total-points">Puntos</th><th>Detalle</th></tr></thead><tbody id="provisional-body"></tbody></table></div>
     </section>
 
     <section id="porras" class="section">
@@ -452,8 +447,6 @@
       document.getElementById('kpi-groups').textContent = Object.keys(currentData.standings).length;
       document.getElementById('kpi-qualifiers').textContent = currentData.provisionalQualifiers.length;
     }
-    function openAll() { document.querySelectorAll("details").forEach(d=>d.open=true); }
-    function closeAll() { document.querySelectorAll("details").forEach(d=>d.open=false); }
     function renderAll() { renderKpis(); renderScoring(); renderResults(); renderStandings(); renderQualifiers(); renderProvisionalScores(); renderPeople(); }
     refreshOficiales();
     renderAll();
