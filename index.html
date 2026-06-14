@@ -136,6 +136,21 @@
     .score-badge.hit { background:#dcfce7; color:#047857; }
     .score-badge.miss { background:#fee2e2; color:#b91c1c; }
     .score-badge.pending { background:#e2e8f0; color:#475569; }
+
+    .fixture-controls { display:flex; gap:8px; flex-wrap:wrap; padding:14px 16px; border-bottom:1px solid var(--line); background:#f8fafc; }
+    .fixture-controls button { background:#eaf1ff; color:#1d4ed8; border:1px solid #dbeafe; padding:9px 12px; font-size:13px; }
+    .fixture-controls button.active { background:#0f172a; color:white; border-color:#0f172a; }
+    .fixture-list { max-height: 680px; overflow:auto; }
+    .fixture-day { padding:12px 16px; background:#eef6ff; color:#1e3a8a; font-weight:1000; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:1; }
+    .fixture-row { display:grid; grid-template-columns: 92px 90px 1fr auto; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--line); }
+    .fixture-row:last-child { border-bottom:0; }
+    .fixture-time { font-weight:1000; color:#0f172a; }
+    .fixture-status { justify-self:start; }
+    .fixture-score { font-size:22px; font-weight:1000; color:#0f172a; min-width:62px; text-align:right; }
+    .fixture-teams { font-weight:900; line-height:1.35; }
+    .fixture-teams .muted { font-weight:800; margin:0 5px; }
+    .fixture-empty { padding:18px; color:var(--muted); }
+    @media (max-width:700px) { .fixture-row { grid-template-columns: 74px 1fr auto; } .fixture-status { grid-column: 2 / 4; } .fixture-score { font-size:19px; } }
     .detail-button { display:inline-flex; align-items:center; justify-content:center; border-radius:999px; padding:8px 12px; font-size:13px; font-weight:1000; text-decoration:none; background:#eaf1ff; color:#1d4ed8; border:1px solid #bfdbfe; transition:.18s ease; }
     .detail-button:hover { transform: translateY(-1px); background:#dbeafe; }
     .prize.hit { background:#f0fdf4; border-color:#bbf7d0; }
@@ -189,6 +204,7 @@
     <div class="wrap">
       <a href="#puntos">Clasificación provisional</a>
       <a href="#puntuacion">Sistema de puntuación</a>
+      <a href="#calendario">Partidos</a>
       <a href="#resultados">Resultados y grupos</a>
       <a href="#porras">Porras</a>
     </div>
@@ -205,8 +221,21 @@
       <div class="card"><table><thead><tr><th>Concepto</th><th class="points">Puntos</th></tr></thead><tbody id="scoring-body"></tbody></table></div>
     </section>
 
+    <section id="calendario" class="section">
+      <div class="section-title"><div><h2>🗓️ Partidos del Mundial</h2><p>Visualización automática con partidos jugados, en juego y futuros usando los datos de la API.</p></div></div>
+      <div class="card">
+        <div class="fixture-controls">
+          <button type="button" class="fixture-filter active" data-filter="all">Todos</button>
+          <button type="button" class="fixture-filter" data-filter="played">Jugados</button>
+          <button type="button" class="fixture-filter" data-filter="live">En juego</button>
+          <button type="button" class="fixture-filter" data-filter="future">Futuros</button>
+        </div>
+        <div id="fixtures-body" class="fixture-list"></div>
+      </div>
+    </section>
+
     <section id="resultados" class="section">
-      <div class="section-title"><div><h2>⚽ Resultados actuales y clasificación</h2><p>Resultados introducidos desde el Excel, tablas provisionales por grupo y clasificados provisionales.</p></div></div>
+      <div class="section-title"><div><h2>⚽ Resultados actuales y clasificación</h2><p>Resultados de la API, tablas provisionales por grupo y clasificados provisionales.</p></div></div>
       <div class="grid grid-2">
         <div class="card"><div class="card-pad"><h3 style="margin:0 0 8px">Resultados actuales</h3><p class="muted" style="margin:0">Solo aparecen partidos ya jugados/cargados.</p></div><div id="results-body"></div></div>
         <div class="card"><div class="card-pad"><h3 style="margin:0 0 8px">Clasificados provisionales a dieciseisavos</h3><p class="muted" style="margin:0">1º y 2º de cada grupo + 8 mejores terceros.</p></div><div class="content" id="qualifiers-list"></div></div>
@@ -327,19 +356,28 @@
     function normalizaPartido(p) {
       const homeGoals = Number(p.golesLocal ?? p.homeGoals ?? p.localGoals);
       const awayGoals = Number(p.golesVisitante ?? p.awayGoals ?? p.visitanteGoals);
+      const estado = p.estado || p.status || p.estadoPartido || '';
+      const played = Number.isFinite(homeGoals) && Number.isFinite(awayGoals) && ['FINISHED','FT','AET','PEN'].includes(String(estado).toUpperCase());
+      const hasScore = Number.isFinite(homeGoals) && Number.isFinite(awayGoals);
       return {
+        id: p.id,
+        fecha: p.fecha || p.date || p.utcDate || '',
+        estado,
+        fase: p.fase || p.stage || '',
         group: p.grupo || p.group,
         home: p.local || p.home,
         away: p.visitante || p.away,
         homeGoals,
         awayGoals,
-        played: Number.isFinite(homeGoals) && Number.isFinite(awayGoals),
-        score: `${homeGoals}-${awayGoals}`
+        played,
+        hasScore,
+        score: hasScore ? `${homeGoals}-${awayGoals}` : '—'
       };
     }
 
     function buildCurrentDataFromBackend(data) {
-      const played = (data.partidos || []).map(normalizaPartido).filter(m => m.group && m.home && m.away && m.played);
+      const allFixtures = (data.partidos || []).map(normalizaPartido).filter(m => m.group && m.home && m.away);
+      const played = allFixtures.filter(m => m.played);
       const groupTeams = getGroupTeams();
       const standings = {};
       let order = 0;
@@ -380,6 +418,7 @@
       return {
         results: played,
         pending,
+        allFixtures,
         standings,
         provisionalQualifiers: provisional.provisionalQualifiers,
         bestThirds: provisional.bestThirds,
@@ -468,6 +507,75 @@
       return `${countMatches(items, oficiales[key])} suman`;
     }
 
+    let fixtureFilter = 'all';
+
+    function fixtureStatus(status) {
+      const s = String(status || '').toUpperCase();
+      if (['FINISHED','FT','AET','PEN'].includes(s)) return { key:'played', label:'Finalizado', cls:'pill' };
+      if (['IN_PLAY','LIVE','PAUSED','1H','2H','HT'].includes(s)) return { key:'live', label:'En juego', cls:'pill gold' };
+      return { key:'future', label:'Próximo', cls:'pill blue' };
+    }
+
+    function formatFixtureDate(value) {
+      if (!value) return 'Fecha pendiente';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return 'Fecha pendiente';
+      return new Intl.DateTimeFormat('es-ES', { weekday:'long', day:'2-digit', month:'short' }).format(d);
+    }
+
+    function formatFixtureTime(value) {
+      if (!value) return '—';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return '—';
+      return new Intl.DateTimeFormat('es-ES', { hour:'2-digit', minute:'2-digit' }).format(d);
+    }
+
+    function getAllFixtures() {
+      return (currentData.allFixtures && currentData.allFixtures.length)
+        ? currentData.allFixtures
+        : [...(currentData.results || []), ...(currentData.pending || [])];
+    }
+
+    function fixtureSortValue(m) {
+      const d = new Date(m.fecha || 0);
+      return Number.isNaN(d.getTime()) ? 9999999999999 : d.getTime();
+    }
+
+    function renderFixtures() {
+      const body = document.getElementById('fixtures-body');
+      if (!body) return;
+      const fixtures = getAllFixtures().slice().sort((a,b) => fixtureSortValue(a) - fixtureSortValue(b));
+      const filtered = fixtures.filter(m => fixtureFilter === 'all' || fixtureStatus(m.estado).key === fixtureFilter);
+      if (!filtered.length) {
+        body.innerHTML = `<div class="fixture-empty">No hay partidos para este filtro.</div>`;
+        return;
+      }
+      let lastDay = '';
+      body.innerHTML = filtered.map(m => {
+        const status = fixtureStatus(m.estado);
+        const day = formatFixtureDate(m.fecha);
+        const score = m.hasScore ? m.score : 'vs';
+        const dayHeader = day !== lastDay ? `<div class="fixture-day">${day}</div>` : '';
+        lastDay = day;
+        return `${dayHeader}<div class="fixture-row">
+          <div class="fixture-time">${formatFixtureTime(m.fecha)}</div>
+          <div class="fixture-status"><span class="${status.cls}">${status.label}</span></div>
+          <div class="fixture-teams">${teamName(m.home)} <span class="muted">vs</span> ${teamName(m.away)} <span class="muted">Grupo ${m.group}</span></div>
+          <div class="fixture-score">${score}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function setupFixtureFilters() {
+      document.querySelectorAll('.fixture-filter').forEach(btn => {
+        btn.addEventListener('click', () => {
+          fixtureFilter = btn.dataset.filter;
+          document.querySelectorAll('.fixture-filter').forEach(b => b.classList.toggle('active', b === btn));
+          renderFixtures();
+        });
+      });
+    }
+
     function renderScoring() {
       document.getElementById("scoring-body").innerHTML = scoring.map(row=>`<tr><td>${row.concepto}</td><td class="points">${row.puntos}</td></tr>`).join("");
     }
@@ -534,7 +642,8 @@
       document.getElementById('kpi-groups').textContent = Object.keys(currentData.standings).length;
       document.getElementById('kpi-qualifiers').textContent = currentData.provisionalQualifiers.length;
     }
-    function renderAll() { applyOnlyPlayedProvisionalRules(); refreshOficiales(); renderKpis(); renderScoring(); renderResults(); renderStandings(); renderQualifiers(); renderProvisionalScores(); renderPeople(); }
+    function renderAll() { applyOnlyPlayedProvisionalRules(); refreshOficiales(); renderKpis(); renderScoring(); renderFixtures(); renderResults(); renderStandings(); renderQualifiers(); renderProvisionalScores(); renderPeople(); }
+    setupFixtureFilters();
     refreshOficiales();
     renderAll();
     loadResultadosFromBackend();
