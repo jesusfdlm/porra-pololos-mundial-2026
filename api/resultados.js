@@ -6,7 +6,8 @@ export default async function handler(req, res) {
 
     if (!apiKey) {
       return res.status(500).json({
-        error: "Falta la variable FOOTBALL_API_KEY en Vercel"
+        ok: false,
+        error: "No existe FOOTBALL_API_KEY en Vercel"
       });
     }
 
@@ -18,50 +19,29 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: "Error consultando API-Football",
-        detalle: data
-      });
-    }
-
-    const partidos = (data.response || [])
-      .filter((item) => {
-        const status = item.fixture?.status?.short;
-        return ["NS", "TBD", "FT", "AET", "PEN", "LIVE", "1H", "2H", "HT"].includes(status);
-      })
-      .map((item) => {
-        const grupo =
-          item.league?.round?.replace("Group Stage - ", "") ||
-          item.league?.round ||
-          "";
-
-        return {
-          id: item.fixture?.id,
-          fecha: item.fixture?.date,
-          estado: item.fixture?.status?.short,
-          ronda: item.league?.round,
-          grupo,
-          local: item.teams?.home?.name,
-          visitante: item.teams?.away?.name,
-          golesLocal: item.goals?.home,
-          golesVisitante: item.goals?.away,
-          logoLocal: item.teams?.home?.logo,
-          logoVisitante: item.teams?.away?.logo
-        };
-      });
-
-    res.setHeader("Cache-Control", "s-maxage=1800, stale-while-revalidate=3600");
-
     return res.status(200).json({
-      actualizado: new Date().toISOString(),
-      fuente: "API-Football",
-      partidos
+      ok: true,
+      statusHttp: response.status,
+      parametros: data.parameters,
+      erroresApi: data.errors,
+      resultadosEncontrados: data.results,
+      totalResponse: Array.isArray(data.response) ? data.response.length : null,
+      primerosPartidos: Array.isArray(data.response)
+        ? data.response.slice(0, 5).map((item) => ({
+            id: item.fixture?.id,
+            fecha: item.fixture?.date,
+            estado: item.fixture?.status,
+            liga: item.league,
+            local: item.teams?.home?.name,
+            visitante: item.teams?.away?.name,
+            goles: item.goals
+          }))
+        : data.response
     });
   } catch (error) {
     return res.status(500).json({
-      error: "Error interno en /api/resultados",
-      detalle: error.message
+      ok: false,
+      error: error.message
     });
   }
 }
