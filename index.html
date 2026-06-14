@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Porra Pololos Mundial 2026</title>
+  <style>
+    :root {
+      --bg: #08111f;
+      --bg2: #0f1e34;
+      --card: rgba(255,255,255,.96);
+      --card2: rgba(255,255,255,.08);
+      --text: #132033;
+      --muted: #65758b;
+      --line: #e6edf5;
+      --accent: #12b981;
+      --accent2: #2563eb;
+      --gold: #f59e0b;
+      --red: #ef4444;
+      --shadow: 0 18px 45px rgba(3, 7, 18, .18);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(18,185,129,.24), transparent 30%),
+        radial-gradient(circle at 90% 8%, rgba(37,99,235,.32), transparent 28%),
+        linear-gradient(135deg, var(--bg), var(--bg2) 55%, #071525);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .hero {
+      color: white;
+      padding: 34px 20px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: "⚽";
+      position: absolute;
+      right: 8vw;
+      top: 16px;
+      font-size: 120px;
+      opacity: .12;
+      transform: rotate(-12deg);
+    }
+    .wrap { max-width: 1240px; margin: 0 auto; }
+    .topline { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    h1 { margin: 0; font-size: clamp(34px, 5vw, 58px); letter-spacing: -1.4px; line-height:1; }
+    .subtitle { margin: 12px 0 0; color: rgba(255,255,255,.78); font-size: 17px; }
+    .hero-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    button, .nav a {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 15px;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration:none;
+      transition:.18s ease;
+      white-space:nowrap;
+    }
+    button { background: white; color: #0f172a; }
+    button.secondary { background: rgba(255,255,255,.12); color:white; border:1px solid rgba(255,255,255,.22); }
+    button:hover, .nav a:hover { transform: translateY(-1px); }
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(18px);
+      background: rgba(8,17,31,.82);
+      border-top: 1px solid rgba(255,255,255,.08);
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+    .nav .wrap { display:flex; gap:10px; padding:10px 20px; overflow:auto; }
+    .nav a { color:white; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.12); font-size:14px; }
+    main { padding: 24px 20px 60px; }
+    .section { margin: 0 auto 28px; scroll-margin-top: 86px; }
+    .section-title { display:flex; justify-content:space-between; align-items:end; gap:14px; margin: 20px 0 14px; color:white; }
+    .section-title h2 { margin:0; font-size:28px; letter-spacing:-.6px; }
+    .section-title p { margin:7px 0 0; color:rgba(255,255,255,.68); }
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.72);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-pad { padding:18px; }
+    .grid { display:grid; gap:16px; }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-groups { grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); }
+    @media (max-width: 850px) { .grid-2,.grid-3 { grid-template-columns:1fr; } }
+    table { width:100%; border-collapse: collapse; }
+    th { background:#0f172a; color:white; text-align:left; padding:12px 14px; font-size:13px; }
+    td { border-bottom:1px solid var(--line); padding:11px 14px; vertical-align:middle; }
+    tr:last-child td { border-bottom:0; }
+    .num, .points, .total-points { text-align:right; font-weight:900; }
+    .total-points { color: var(--accent); font-size:20px; }
+    .pill { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:5px 10px; font-size:12px; font-weight:900; background:#eafaf4; color:#047857; }
+    .pill.blue { background:#eaf1ff; color:#1d4ed8; }
+    .pill.gold { background:#fff7e6; color:#b45309; }
+    .muted { color:var(--muted); }
+    .score-card { display:flex; justify-content:space-between; gap:14px; align-items:center; padding:14px 16px; border-bottom:1px solid var(--line); }
+    .score-card:last-child { border-bottom:0; }
+    .match-teams { font-weight:900; }
+    .match-score { font-size:24px; font-weight:1000; color:#0f172a; white-space:nowrap; }
+    .group-card .group-head {
+      display:flex; justify-content:space-between; align-items:center; padding:14px 16px;
+      background: linear-gradient(135deg, #0f172a, #1e3a8a); color:white;
+    }
+    .group-head h3 { margin:0; font-size:20px; }
+    .qualified-row td:first-child { border-left: 5px solid var(--accent); }
+    .third-row td:first-child { border-left: 5px solid var(--gold); }
+    .ranking-row:first-child td { background:#f8fffb; }
+    .ranking-name { font-size:18px; font-weight:1000; }
+    .rank-medal { font-size:22px; width:54px; font-weight:1000; }
+    .breakdown { color:var(--muted); font-size:13px; line-height:1.35; }
+    details { border-top:1px solid var(--line); }
+    summary { cursor:pointer; padding:14px 18px; font-weight:1000; background:#f8fafc; list-style:none; }
+    summary::-webkit-details-marker { display:none; }
+    summary::after { content:"＋"; float:right; color:var(--accent2); }
+    details[open] summary::after { content:"−"; }
+    details[open] summary { background:#eef6ff; }
+    .content { padding:16px 18px; }
+    .team-list { display:grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap:8px; margin:0; padding:0; list-style:none; }
+    .team-list li { background:#f8fafc; border:1px solid var(--line); border-radius:12px; padding:9px 10px; font-weight:750; }
+    .person-header {
+      color:white; padding:18px;
+      background: linear-gradient(135deg, #111827, #1f3b73 65%, #047857);
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+    }
+    .person-header h3 { margin:0; font-size:24px; }
+    .prize-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(170px,1fr)); gap:10px; }
+    .prize { background:#f8fafc; border:1px solid var(--line); border-radius:14px; padding:12px; }
+    .prize span { display:block; color:var(--muted); font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; }
+    .prize strong { display:block; margin-top:5px; font-size:16px; }
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; }
+    .kpi { background:rgba(255,255,255,.11); border:1px solid rgba(255,255,255,.16); border-radius:18px; padding:14px; color:white; }
+    .kpi .value { font-size:28px; font-weight:1000; }
+    .kpi .label { color:rgba(255,255,255,.72); font-weight:750; }
+    .subcards { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .mini-card { background:#f8fafc; border:1px solid var(--line); border-radius:16px; padding:14px; }
+    .mini-card h4 { margin:0 0 8px; }
+    @media print {
+      body { background:white; } .hero,.nav,.hero-actions { display:none; } main { padding:0; } .section-title { color:#0f172a; } .card { box-shadow:none; break-inside:avoid; } details:not([open]) .content { display:block; } summary::after { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="topline">
+        <div>
+          <h1>🏆 Porra Pololos Mundial 2026</h1>
+          <p class="subtitle">Marcador de porras, resultados actuales, clasificación provisional y predicciones de cada participante.</p>
+        </div>
+        <div class="hero-actions">
+          <button onclick="window.print()">Imprimir / PDF</button>
+          <button class="secondary" onclick="openAll()">Abrir todo</button>
+          <button class="secondary" onclick="closeAll()">Cerrar todo</button>
+        </div>
+      </div>
+      <div class="kpi-grid" style="margin-top:22px">
+        <div class="kpi"><div class="value" id="kpi-played">0</div><div class="label">partidos con resultado</div></div>
+        <div class="kpi"><div class="value" id="kpi-groups">12</div><div class="label">grupos</div></div>
+        <div class="kpi"><div class="value" id="kpi-qualifiers">0</div><div class="label">clasificados provisionales</div></div>
+        <div class="kpi"><div class="value">5</div><div class="label">participantes</div></div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="nav">
+    <div class="wrap">
+      <a href="#puntuacion">Sistema de puntuación</a>
+      <a href="#resultados">Resultados y clasificación</a>
+      <a href="#puntos">Puntos provisionales</a>
+      <a href="#porras">Porras</a>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <section id="puntuacion" class="section">
+      <div class="section-title"><div><h2>📋 Sistema de puntuación</h2><p>Se han eliminado los conceptos de Signo 1X2 y Resultado exacto.</p></div></div>
+      <div class="card"><table><thead><tr><th>Concepto</th><th class="points">Puntos</th></tr></thead><tbody id="scoring-body"></tbody></table></div>
+    </section>
+
+    <section id="resultados" class="section">
+      <div class="section-title"><div><h2>⚽ Resultados actuales y clasificación</h2><p>Resultados introducidos desde el Excel, tablas provisionales por grupo y clasificados provisionales.</p></div></div>
+      <div class="grid grid-2">
+        <div class="card"><div class="card-pad"><h3 style="margin:0 0 8px">Resultados actuales</h3><p class="muted" style="margin:0">Solo aparecen partidos ya jugados/cargados.</p></div><div id="results-body"></div></div>
+        <div class="card"><div class="card-pad"><h3 style="margin:0 0 8px">Clasificados provisionales a dieciseisavos</h3><p class="muted" style="margin:0">1º y 2º de cada grupo + 8 mejores terceros.</p></div><div class="content" id="qualifiers-list"></div></div>
+      </div>
+      <div class="section-title" style="margin-top:24px"><div><h2>🌍 Clasificación de grupos</h2></div></div>
+      <div id="standings" class="grid grid-groups"></div>
+    </section>
+
+    <section id="puntos" class="section">
+      <div class="section-title"><div><h2>📊 Puntos provisionales</h2><p>Puntuación calculada contra los clasificados provisionales actuales.</p></div></div>
+      <div class="card"><table><thead><tr><th>Puesto</th><th>Participante</th><th class="total-points">Puntos</th><th>Detalle</th></tr></thead><tbody id="provisional-body"></tbody></table></div>
+    </section>
+
+    <section id="porras" class="section">
+      <div class="section-title"><div><h2>📝 Porras de cada participante</h2><p>Predicciones completas por ronda y premios finales.</p></div></div>
+      <div id="people" class="grid grid-2"></div>
+    </section>
+  </main>
+
+  <script>
+    const scoring = [{"concepto": "Equipo clasificado para DIECISEISAVOS", "puntos": 20}, {"concepto": "Equipo clasificado para OCTAVOS", "puntos": 40}, {"concepto": "Equipo clasificado para CUARTOS", "puntos": 40}, {"concepto": "Equipo clasificado para SEMIFINALES", "puntos": 60}, {"concepto": "Equipo clasificado para FINAL", "puntos": 50}, {"concepto": "Campeón", "puntos": 20}, {"concepto": "Subcampeón", "puntos": 20}, {"concepto": "3º puesto", "puntos": 20}, {"concepto": "Bota de Oro (máximo goleador)", "puntos": 25}, {"concepto": "Balón de Oro (mejor jugador)", "puntos": 25}];
+    const porras = [
+      {
+        nombre: "Jesús",
+        dieciseisavos: ["República Checa", "Brasil", "Alemania", "Países Bajos", "Ecuador", "Francia", "México", "Inglaterra", "Bélgica", "Turquía", "España", "Colombia", "Suiza", "Paraguay", "Argentina", "Portugal", "Canadá", "Japón", "Estados Unidos", "Marruecos", "Noruega", "Suecia", "Escocia", "Senegal", "Corea del Sur", "Bosnia y Herzegovina", "Austria", "Croacia", "Irán", "Egipto", "Uruguay", "Costa de Marfil"],
+        octavos: ["República Checa", "Alemania", "Brasil", "México", "Colombia", "Turquía", "Argentina", "Suiza", "Países Bajos", "Francia", "Noruega", "Inglaterra", "España", "Bélgica", "Paraguay", "Portugal"],
+        cuartos: ["Francia", "España", "Brasil", "Argentina", "Países Bajos", "Turquía", "Inglaterra", "Portugal"],
+        semifinales: ["Francia", "Inglaterra", "España", "Portugal"],
+        final: ["España", "Portugal"],
+        premios: { campeon: "España", subcampeon: "Portugal", tercerPuesto: "Francia", balonOro: "Pedri", botaOro: "Mbappe" }
+      },
+      {
+        nombre: "Iván",
+        dieciseisavos: ["Corea del Sur", "Brasil", "Alemania", "Países Bajos", "Ecuador", "Francia", "México", "Croacia", "Bélgica", "Turquía", "España", "Colombia", "Canadá", "Australia", "Argentina", "Portugal", "Suiza", "Japón", "Estados Unidos", "Marruecos", "Noruega", "Suecia", "Escocia", "Senegal", "República Checa", "Catar", "Austria", "Inglaterra", "Irán", "Egipto", "Uruguay", "Panamá"],
+        octavos: ["Corea del Sur", "Alemania", "Brasil", "México", "Colombia", "Turquía", "Argentina", "Canadá", "Marruecos", "Francia", "Noruega", "Croacia", "España", "Bélgica", "Australia", "Portugal"],
+        cuartos: ["Francia", "España", "Brasil", "Argentina", "Marruecos", "Bélgica", "Croacia", "Portugal"],
+        semifinales: ["Francia", "Brasil", "España", "Portugal"],
+        final: ["España", "Portugal"],
+        premios: { campeon: "España", subcampeon: "Portugal", tercerPuesto: "Francia", balonOro: "Pedri", botaOro: "Mbappe" }
+      },
+      {
+        nombre: "Feli",
+        dieciseisavos: ["República Checa", "Brasil", "Alemania", "Países Bajos", "Ecuador", "Francia", "México", "Inglaterra", "Bélgica", "Turquía", "España", "Colombia", "Suiza", "Paraguay", "Argentina", "Portugal", "Bosnia y Herzegovina", "Japón", "Escocia", "Marruecos", "Senegal", "Estados Unidos", "Arabia Saudita", "Noruega", "Corea del Sur", "Canadá", "Austria", "Croacia", "Irán", "Egipto", "Uruguay", "Costa de Marfil"],
+        octavos: ["República Checa", "Alemania", "Brasil", "México", "Colombia", "Turquía", "Argentina", "Suiza", "Marruecos", "Francia", "Senegal", "Inglaterra", "España", "Corea del Sur", "Paraguay", "Portugal"],
+        cuartos: ["Francia", "España", "Brasil", "Argentina", "Marruecos", "Turquía", "Inglaterra", "Portugal"],
+        semifinales: ["Francia", "Brasil", "España", "Portugal"],
+        final: ["España", "Brasil"],
+        premios: { campeon: "España", subcampeon: "Brasil", tercerPuesto: "Portugal", balonOro: "Don Pedro González López", botaOro: "Kylian Mbappé" }
+      },
+      {
+        nombre: "Sergio",
+        dieciseisavos: ["Corea del Sur", "Brasil", "Alemania", "Países Bajos", "Ecuador", "Francia", "México", "Inglaterra", "Bélgica", "Estados Unidos", "España", "Colombia", "Canadá", "Turquía", "Argentina", "Portugal", "Suiza", "Japón", "Paraguay", "Marruecos", "Senegal", "Suecia", "Escocia", "Noruega", "República Checa", "Argelia", "Austria", "Croacia", "Irán", "Egipto", "Uruguay", "Ghana"],
+        octavos: ["Suiza", "Alemania", "Brasil", "México", "Croacia", "Estados Unidos", "Argentina", "Canadá", "Marruecos", "Francia", "Senegal", "Inglaterra", "España", "Bélgica", "Turquía", "Portugal"],
+        cuartos: ["Francia", "España", "Brasil", "Argentina", "Marruecos", "Bélgica", "Inglaterra", "Portugal"],
+        semifinales: ["Francia", "Brasil", "España", "Portugal"],
+        final: ["España", "Brasil"],
+        premios: { campeon: "España", subcampeon: "Brasil", tercerPuesto: "Francia", balonOro: "Oyarzabal", botaOro: "Doue" }
+      },
+      {
+        nombre: "Carlos",
+        dieciseisavos: ["México", "Brasil", "Alemania", "Países Bajos", "Ecuador", "Francia", "Corea del Sur", "Inglaterra", "Bélgica", "Turquía", "España", "Colombia", "Suiza", "Estados Unidos", "Argentina", "Portugal", "Canadá", "Suecia", "Paraguay", "Marruecos", "Noruega", "Japón", "Escocia", "Arabia Saudita", "República Checa", "Catar", "Argelia", "Croacia", "Austria", "Egipto", "Uruguay", "Ghana"],
+        octavos: ["México", "Alemania", "Brasil", "Corea del Sur", "Colombia", "Turquía", "Argentina", "Suiza", "Marruecos", "Francia", "Noruega", "Inglaterra", "España", "Bélgica", "Egipto", "Portugal"],
+        cuartos: ["Francia", "España", "Noruega", "Argentina", "Marruecos", "Turquía", "Inglaterra", "Portugal"],
+        semifinales: ["Francia", "Noruega", "España", "Portugal"],
+        final: ["España", "Portugal"],
+        premios: { campeon: "España", subcampeon: "Portugal", tercerPuesto: "Francia", balonOro: "Pedri", botaOro: "Mbappe" }
+      }
+    ];
+    const currentData = {"results": [{"group": "A", "code": "A1", "home": "México", "away": "Sudáfrica", "played": true, "score": "2-0", "homeGoals": 2, "awayGoals": 0}, {"group": "A", "code": "A1", "home": "Corea del Sur", "away": "República Checa", "played": true, "score": "2-1", "homeGoals": 2, "awayGoals": 1}, {"group": "B", "code": "B1", "home": "Canadá", "away": "Bosnia y Herzegovina", "played": true, "score": "1-1", "homeGoals": 1, "awayGoals": 1}, {"group": "D", "code": "D1", "home": "Estados Unidos", "away": "Paraguay", "played": true, "score": "4-1", "homeGoals": 4, "awayGoals": 1}], "pending": [{"group": "B", "code": "B1", "home": "Catar", "away": "Suiza", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "C", "code": "C1", "home": "Brasil", "away": "Marruecos", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "C", "code": "C1", "home": "Haití", "away": "Escocia", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "D", "code": "D1", "home": "Australia", "away": "Turquía", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "E", "code": "E1", "home": "Alemania", "away": "Curazao", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "E", "code": "E1", "home": "Costa de Marfil", "away": "Ecuador", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "F", "code": "F1", "home": "Países Bajos", "away": "Japón", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "F", "code": "F1", "home": "Suecia", "away": "Túnez", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "G", "code": "G1", "home": "Bélgica", "away": "Egipto", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "G", "code": "G1", "home": "Irán", "away": "Nueva Zelanda", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "H", "code": "H1", "home": "España", "away": "Cabo Verde", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "H", "code": "H1", "home": "Arabia Saudita", "away": "Uruguay", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "I", "code": "I1", "home": "Francia", "away": "Senegal", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "I", "code": "I1", "home": "Irak", "away": "Noruega", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "J", "code": "J1", "home": "Argentina", "away": "Argelia", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "J", "code": "J1", "home": "Austria", "away": "Jordania", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "K", "code": "K1", "home": "Portugal", "away": "RD Congo", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "K", "code": "K1", "home": "Uzbekistán", "away": "Colombia", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "L", "code": "L1", "home": "Inglaterra", "away": "Croacia", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "L", "code": "L1", "home": "Ghana", "away": "Panamá", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "A", "code": "A2", "home": "República Checa", "away": "Sudáfrica", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "A", "code": "A2", "home": "México", "away": "Corea del Sur", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "B", "code": "B2", "home": "Suiza", "away": "Bosnia y Herzegovina", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "B", "code": "B2", "home": "Canadá", "away": "Catar", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "C", "code": "C2", "home": "Escocia", "away": "Marruecos", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "C", "code": "C2", "home": "Brasil", "away": "Haití", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "D", "code": "D2", "home": "Estados Unidos", "away": "Australia", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "D", "code": "D2", "home": "Turquía", "away": "Paraguay", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "E", "code": "E2", "home": "Alemania", "away": "Costa de Marfil", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "E", "code": "E2", "home": "Ecuador", "away": "Curazao", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "F", "code": "F2", "home": "Países Bajos", "away": "Suecia", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "F", "code": "F2", "home": "Túnez", "away": "Japón", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "G", "code": "G2", "home": "Bélgica", "away": "Irán", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "G", "code": "G2", "home": "Nueva Zelanda", "away": "Egipto", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "H", "code": "H2", "home": "España", "away": "Arabia Saudita", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "H", "code": "H2", "home": "Uruguay", "away": "Cabo Verde", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "I", "code": "I2", "home": "Francia", "away": "Irak", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "I", "code": "I2", "home": "Noruega", "away": "Senegal", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "J", "code": "J2", "home": "Argentina", "away": "Austria", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "J", "code": "J2", "home": "Jordania", "away": "Argelia", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "K", "code": "K2", "home": "Portugal", "away": "Uzbekistán", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "K", "code": "K2", "home": "Colombia", "away": "RD Congo", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "L", "code": "L2", "home": "Inglaterra", "away": "Ghana", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "L", "code": "L2", "home": "Panamá", "away": "Croacia", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "A", "code": "A3", "home": "República Checa", "away": "México", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "A", "code": "A3", "home": "Sudáfrica", "away": "Corea del Sur", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "B", "code": "B3", "home": "Suiza", "away": "Canadá", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "B", "code": "B3", "home": "Bosnia y Herzegovina", "away": "Catar", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "C", "code": "C3", "home": "Escocia", "away": "Brasil", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "C", "code": "C3", "home": "Marruecos", "away": "Haití", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "D", "code": "D3", "home": "Turquía", "away": "Estados Unidos", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "D", "code": "D3", "home": "Paraguay", "away": "Australia", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "E", "code": "E3", "home": "Curazao", "away": "Costa de Marfil", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "E", "code": "E3", "home": "Ecuador", "away": "Alemania", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "F", "code": "F3", "home": "Japón", "away": "Suecia", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "F", "code": "F3", "home": "Túnez", "away": "Países Bajos", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "G", "code": "G3", "home": "Egipto", "away": "Irán", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "G", "code": "G3", "home": "Nueva Zelanda", "away": "Bélgica", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "H", "code": "H3", "home": "Cabo Verde", "away": "Arabia Saudita", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "H", "code": "H3", "home": "Uruguay", "away": "España", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "I", "code": "I3", "home": "Noruega", "away": "Francia", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "I", "code": "I3", "home": "Senegal", "away": "Irak", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "J", "code": "J3", "home": "Argelia", "away": "Austria", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "J", "code": "J3", "home": "Jordania", "away": "Argentina", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "K", "code": "K3", "home": "Colombia", "away": "Portugal", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "K", "code": "K3", "home": "RD Congo", "away": "Uzbekistán", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "L", "code": "L3", "home": "Panamá", "away": "Inglaterra", "played": false, "score": null, "homeGoals": null, "awayGoals": null}, {"group": "L", "code": "L3", "home": "Croacia", "away": "Ghana", "played": false, "score": null, "homeGoals": null, "awayGoals": null}], "standings": {"A": [{"team": "México", "PJ": 1, "PG": 1, "PE": 0, "PP": 0, "GF": 2, "GC": 0, "DG": 2, "Pts": 3, "order": 0, "Pos": 1}, {"team": "Corea del Sur", "PJ": 1, "PG": 1, "PE": 0, "PP": 0, "GF": 2, "GC": 1, "DG": 1, "Pts": 3, "order": 2, "Pos": 2}, {"team": "República Checa", "PJ": 1, "PG": 0, "PE": 0, "PP": 1, "GF": 1, "GC": 2, "DG": -1, "Pts": 0, "order": 3, "Pos": 3}, {"team": "Sudáfrica", "PJ": 1, "PG": 0, "PE": 0, "PP": 1, "GF": 0, "GC": 2, "DG": -2, "Pts": 0, "order": 1, "Pos": 4}], "B": [{"team": "Canadá", "PJ": 1, "PG": 0, "PE": 1, "PP": 0, "GF": 1, "GC": 1, "DG": 0, "Pts": 1, "order": 4, "Pos": 1}, {"team": "Bosnia y Herzegovina", "PJ": 1, "PG": 0, "PE": 1, "PP": 0, "GF": 1, "GC": 1, "DG": 0, "Pts": 1, "order": 5, "Pos": 2}, {"team": "Catar", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 6, "Pos": 3}, {"team": "Suiza", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 7, "Pos": 4}], "C": [{"team": "Brasil", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 8, "Pos": 1}, {"team": "Marruecos", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 9, "Pos": 2}, {"team": "Haití", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 10, "Pos": 3}, {"team": "Escocia", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 11, "Pos": 4}], "D": [{"team": "Estados Unidos", "PJ": 1, "PG": 1, "PE": 0, "PP": 0, "GF": 4, "GC": 1, "DG": 3, "Pts": 3, "order": 12, "Pos": 1}, {"team": "Australia", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 14, "Pos": 2}, {"team": "Turquía", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 15, "Pos": 3}, {"team": "Paraguay", "PJ": 1, "PG": 0, "PE": 0, "PP": 1, "GF": 1, "GC": 4, "DG": -3, "Pts": 0, "order": 13, "Pos": 4}], "E": [{"team": "Alemania", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 16, "Pos": 1}, {"team": "Curazao", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 17, "Pos": 2}, {"team": "Costa de Marfil", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 18, "Pos": 3}, {"team": "Ecuador", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 19, "Pos": 4}], "F": [{"team": "Países Bajos", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 20, "Pos": 1}, {"team": "Japón", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 21, "Pos": 2}, {"team": "Suecia", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 22, "Pos": 3}, {"team": "Túnez", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 23, "Pos": 4}], "G": [{"team": "Bélgica", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 24, "Pos": 1}, {"team": "Egipto", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 25, "Pos": 2}, {"team": "Irán", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 26, "Pos": 3}, {"team": "Nueva Zelanda", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 27, "Pos": 4}], "H": [{"team": "España", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 28, "Pos": 1}, {"team": "Cabo Verde", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 29, "Pos": 2}, {"team": "Arabia Saudita", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 30, "Pos": 3}, {"team": "Uruguay", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 31, "Pos": 4}], "I": [{"team": "Francia", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 32, "Pos": 1}, {"team": "Senegal", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 33, "Pos": 2}, {"team": "Irak", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 34, "Pos": 3}, {"team": "Noruega", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 35, "Pos": 4}], "J": [{"team": "Argentina", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 36, "Pos": 1}, {"team": "Argelia", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 37, "Pos": 2}, {"team": "Austria", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 38, "Pos": 3}, {"team": "Jordania", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 39, "Pos": 4}], "K": [{"team": "Portugal", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 40, "Pos": 1}, {"team": "RD Congo", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 41, "Pos": 2}, {"team": "Uzbekistán", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 42, "Pos": 3}, {"team": "Colombia", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 43, "Pos": 4}], "L": [{"team": "Inglaterra", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 44, "Pos": 1}, {"team": "Croacia", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 45, "Pos": 2}, {"team": "Ghana", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 46, "Pos": 3}, {"team": "Panamá", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 47, "Pos": 4}]}, "provisionalQualifiers": ["México", "Corea del Sur", "Canadá", "Bosnia y Herzegovina", "Brasil", "Marruecos", "Estados Unidos", "Australia", "Alemania", "Curazao", "Países Bajos", "Japón", "Bélgica", "Egipto", "España", "Cabo Verde", "Francia", "Senegal", "Argentina", "Argelia", "Portugal", "RD Congo", "Inglaterra", "Croacia", "Catar", "Haití", "Turquía", "Costa de Marfil", "Suecia", "Irán", "Arabia Saudita", "Irak"], "bestThirds": [{"group": "B", "team": "Catar", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 6, "Pos": 3}, {"group": "C", "team": "Haití", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 10, "Pos": 3}, {"group": "D", "team": "Turquía", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 15, "Pos": 3}, {"group": "E", "team": "Costa de Marfil", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 18, "Pos": 3}, {"group": "F", "team": "Suecia", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 22, "Pos": 3}, {"group": "G", "team": "Irán", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 26, "Pos": 3}, {"group": "H", "team": "Arabia Saudita", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 30, "Pos": 3}, {"group": "I", "team": "Irak", "PJ": 0, "PG": 0, "PE": 0, "PP": 0, "GF": 0, "GC": 0, "DG": 0, "Pts": 0, "order": 34, "Pos": 3}], "sourceFile": "Excel-Mundial-2026(1).xlsx"};
+
+    const flagMap = {
+      "México":"🇲🇽", "Sudáfrica":"🇿🇦", "Corea del Sur":"🇰🇷", "República Checa":"🇨🇿", "Chequia":"🇨🇿", "Czechia":"🇨🇿",
+      "Canadá":"🇨🇦", "Bosnia y Herzegovina":"🇧🇦", "Catar":"🇶🇦", "Qatar":"🇶🇦", "Suiza":"🇨🇭",
+      "Brasil":"🇧🇷", "Marruecos":"🇲🇦", "Haití":"🇭🇹", "Escocia":"🏴",
+      "Estados Unidos":"🇺🇸", "Paraguay":"🇵🇾", "Australia":"🇦🇺", "Turquía":"🇹🇷",
+      "Alemania":"🇩🇪", "Curazao":"🇨🇼", "Costa de Marfil":"🇨🇮", "Ecuador":"🇪🇨",
+      "Países Bajos":"🇳🇱", "Japón":"🇯🇵", "Suecia":"🇸🇪", "Túnez":"🇹🇳",
+      "Bélgica":"🇧🇪", "Egipto":"🇪🇬", "Irán":"🇮🇷", "Nueva Zelanda":"🇳🇿",
+      "España":"🇪🇸", "Cabo Verde":"🇨🇻", "Arabia Saudita":"🇸🇦", "Uruguay":"🇺🇾",
+      "Francia":"🇫🇷", "Senegal":"🇸🇳", "Irak":"🇮🇶", "Noruega":"🇳🇴",
+      "Argentina":"🇦🇷", "Argelia":"🇩🇿", "Austria":"🇦🇹", "Jordania":"🇯🇴",
+      "Portugal":"🇵🇹", "RD Congo":"🇨🇩", "DR Congo":"🇨🇩", "Uzbekistán":"🇺🇿", "Colombia":"🇨🇴",
+      "Inglaterra":"🏴", "Croacia":"🇭🇷", "Ghana":"🇬🇭", "Panamá":"🇵🇦",
+      "Bolivia":"🇧🇴", "Arabia Saudí":"🇸🇦", "Costa Rica":"🇨🇷", "Nueva Caledonia":"🇳🇨"
+    };
+    const avatarMap = { "Jesús":"🦁", "Iván":"🦊", "Feli":"🐯", "Sergio":"🐺", "Carlos":"🐻" };
+    const oficiales = {
+      dieciseisavos: currentData.provisionalQualifiers,
+      octavos: [], cuartos: [], semifinales: [], final: [],
+      premios: { campeon:"", subcampeon:"", tercerPuesto:"", balonOro:"", botaOro:"" }
+    };
+    const puntosPorConcepto = { dieciseisavos:20, octavos:40, cuartos:40, semifinales:60, final:50, campeon:20, subcampeon:20, tercerPuesto:20, botaOro:25, balonOro:25 };
+
+    function flag(team) { return flagMap[team] || "🏳️"; }
+    function teamName(team) { return `<span class="flag">${flag(team)}</span> ${team}`; }
+    function list(items) { return `<ul class="team-list">${(items||[]).map(item=>`<li>${teamName(item)}</li>`).join("")}</ul>`; }
+    function normalizeText(value) { return String(value||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9ñ ]/g,"").replace(/\s+/g," ").trim(); }
+    function countMatches(predicted, official) { const officialSet = new Set((official||[]).map(normalizeText)); return (predicted||[]).filter(item=>officialSet.has(normalizeText(item))).length; }
+    function prizeHit(predicted, official) { if(!official) return 0; return normalizeText(predicted)===normalizeText(official)?1:0; }
+
+    function renderScoring() {
+      document.getElementById("scoring-body").innerHTML = scoring.map(row=>`<tr><td>${row.concepto}</td><td class="points">${row.puntos}</td></tr>`).join("");
+    }
+    function renderResults() {
+      document.getElementById("results-body").innerHTML = currentData.results.length
+        ? currentData.results.map(m=>`<div class="score-card"><div><div class="pill blue">Grupo ${m.group}</div><div class="match-teams" style="margin-top:7px">${teamName(m.home)} <span class="muted">vs</span> ${teamName(m.away)}</div></div><div class="match-score">${m.score}</div></div>`).join("")
+        : `<div class="card-pad muted">Todavía no hay resultados introducidos.</div>`;
+    }
+    function renderStandings() {
+      document.getElementById("standings").innerHTML = Object.entries(currentData.standings).map(([group, rows])=>`
+        <article class="card group-card">
+          <div class="group-head"><h3>Grupo ${group}</h3><span>${rows.filter(r=>r.PJ>0).length} equipos con partidos</span></div>
+          <table><thead><tr><th>Pos.</th><th>Equipo</th><th class="num">PJ</th><th class="num">GF</th><th class="num">GC</th><th class="num">DG</th><th class="num">Pts</th></tr></thead><tbody>
+            ${rows.map(r=>`<tr class="${r.Pos<=2?'qualified-row':(r.Pos===3?'third-row':'')}"><td><strong>${r.Pos}º</strong></td><td>${teamName(r.team)}</td><td class="num">${r.PJ}</td><td class="num">${r.GF}</td><td class="num">${r.GC}</td><td class="num">${r.DG}</td><td class="num"><strong>${r.Pts}</strong></td></tr>`).join("")}
+          </tbody></table>
+        </article>`).join("");
+    }
+    function renderQualifiers() {
+      const all = `<div class="mini-card"><h4>Listado completo (${currentData.provisionalQualifiers.length})</h4>${list(currentData.provisionalQualifiers)}</div>`;
+      const best = `<div class="mini-card"><h4>8 mejores terceros</h4><ul class="team-list">${currentData.bestThirds.map(r=>`<li>${teamName(r.team)} <span class="muted">Grupo ${r.group}, ${r.Pts} pts, DG ${r.DG}</span></li>`).join("")}</ul></div>`;
+      const byGroup = Object.entries(currentData.standings).map(([g, rows])=>`<div class="mini-card"><h4>Grupo ${g}</h4><p><span class="pill">1º-2º</span> ${rows.slice(0,2).map(r=>teamName(r.team)).join(", ")}</p><p><span class="pill gold">3º</span> ${teamName(rows[2].team)}</p></div>`).join("");
+      document.getElementById("qualifiers-list").innerHTML = `<div class="subcards">${all}${best}${byGroup}</div>`;
+    }
+    function calculateScores() {
+      return porras.map(p=>{
+        const hits = {
+          dieciseisavos:countMatches(p.dieciseisavos, oficiales.dieciseisavos), octavos:countMatches(p.octavos, oficiales.octavos), cuartos:countMatches(p.cuartos, oficiales.cuartos), semifinales:countMatches(p.semifinales, oficiales.semifinales), final:countMatches(p.final, oficiales.final), campeon:prizeHit(p.premios.campeon, oficiales.premios.campeon), subcampeon:prizeHit(p.premios.subcampeon, oficiales.premios.subcampeon), tercerPuesto:prizeHit(p.premios.tercerPuesto, oficiales.premios.tercerPuesto), balonOro:prizeHit(p.premios.balonOro, oficiales.premios.balonOro), botaOro:prizeHit(p.premios.botaOro, oficiales.premios.botaOro)
+        };
+        const total = Object.entries(hits).reduce((sum,[key,value])=>sum+value*puntosPorConcepto[key],0);
+        return { nombre:p.nombre, total, hits };
+      }).sort((a,b)=>b.total-a.total || a.nombre.localeCompare(b.nombre));
+    }
+    function medal(index) { return index===0 ? "🥇" : index===1 ? "🥈" : index===2 ? "🥉" : `${index+1}º`; }
+    function renderProvisionalScores() {
+      document.getElementById("provisional-body").innerHTML = calculateScores().map((row,index)=>{
+        const h=row.hits;
+        const detail=[`16avos: ${h.dieciseisavos} aciertos`, `Octavos: ${h.octavos}`, `Cuartos: ${h.cuartos}`, `Semis: ${h.semifinales}`, `Final: ${h.final}`, `Campeón: ${h.campeon}`, `Subcampeón: ${h.subcampeon}`, `3º: ${h.tercerPuesto}`, `Balón Oro: ${h.balonOro}`, `Bota Oro: ${h.botaOro}`].join(" · ");
+        return `<tr class="ranking-row"><td class="rank-medal">${medal(index)}</td><td><span style="font-size:24px">${avatarMap[row.nombre]||'👤'}</span> <span class="ranking-name">${row.nombre}</span></td><td class="total-points">${row.total}</td><td class="breakdown">${detail}</td></tr>`;
+      }).join("");
+    }
+    function prizeCard(label, value) { return `<div class="prize"><span>${label}</span><strong>${teamName(value)}</strong></div>`; }
+    function renderPeople() {
+      document.getElementById("people").innerHTML = porras.map(p=>`<article class="card"><div class="person-header"><h3>${avatarMap[p.nombre]||'👤'} ${p.nombre}</h3><span class="pill gold">${teamName(p.premios.campeon)} campeón</span></div><details open><summary>Clasificados a dieciseisavos (${p.dieciseisavos.length})</summary><div class="content">${list(p.dieciseisavos)}</div></details><details><summary>Clasificados a octavos (${p.octavos.length})</summary><div class="content">${list(p.octavos)}</div></details><details><summary>Clasificados a cuartos (${p.cuartos.length})</summary><div class="content">${list(p.cuartos)}</div></details><details><summary>Clasificados a semifinales (${p.semifinales.length})</summary><div class="content">${list(p.semifinales)}</div></details><details><summary>Clasificados a la final (${p.final.length})</summary><div class="content">${list(p.final)}</div></details><details open><summary>Premios finales</summary><div class="content"><div class="prize-grid">${prizeCard('Campeón',p.premios.campeon)}${prizeCard('Subcampeón',p.premios.subcampeon)}${prizeCard('3º puesto',p.premios.tercerPuesto)}<div class="prize"><span>Balón de Oro</span><strong>⭐ ${p.premios.balonOro}</strong></div><div class="prize"><span>Bota de Oro</span><strong>👟 ${p.premios.botaOro}</strong></div></div></div></details></article>`).join("");
+    }
+    function renderKpis() {
+      document.getElementById('kpi-played').textContent = currentData.results.length;
+      document.getElementById('kpi-groups').textContent = Object.keys(currentData.standings).length;
+      document.getElementById('kpi-qualifiers').textContent = currentData.provisionalQualifiers.length;
+    }
+    function openAll() { document.querySelectorAll("details").forEach(d=>d.open=true); }
+    function closeAll() { document.querySelectorAll("details").forEach(d=>d.open=false); }
+    renderKpis(); renderScoring(); renderResults(); renderStandings(); renderQualifiers(); renderProvisionalScores(); renderPeople();
+  </script>
+</body>
+</html>
