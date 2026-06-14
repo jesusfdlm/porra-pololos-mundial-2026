@@ -373,13 +373,7 @@
         standings[group].forEach((r, idx) => r.Pos = idx + 1);
       });
 
-      const direct = Object.values(standings).flatMap(rows => rows.slice(0,2).map(r => r.team));
-      const bestThirds = Object.entries(standings)
-        .map(([group, rows]) => ({ group, ...rows[2] }))
-        .sort((a,b) => b.Pts - a.Pts || b.DG - a.DG || b.GF - a.GF || a.order - b.order)
-        .slice(0,8);
-
-      const provisionalQualifiers = [...direct, ...bestThirds.map(r => r.team)];
+      const provisional = getOnlyPlayedProvisionalQualifiers(standings);
       const playedKeys = new Set(played.map(m => `${normalizeText(m.group)}|${normalizeText(m.home)}|${normalizeText(m.away)}`));
       const pending = baseSchedule.filter(m => !playedKeys.has(`${normalizeText(m.group)}|${normalizeText(m.home)}|${normalizeText(m.away)}`));
 
@@ -387,11 +381,43 @@
         results: played,
         pending,
         standings,
-        provisionalQualifiers,
-        bestThirds,
+        provisionalQualifiers: provisional.provisionalQualifiers,
+        bestThirds: provisional.bestThirds,
         sourceFile: data.fuente || data.sourceFile || 'Backend /api/resultados',
         actualizado: data.actualizado || new Date().toISOString()
       };
+    }
+
+    function getOnlyPlayedProvisionalQualifiers(standings) {
+      const direct = Object.values(standings || {}).flatMap(rows =>
+        (rows || []).slice(0, 2).filter(r => r.PJ > 0).map(r => r.team)
+      );
+      const bestThirds = Object.entries(standings || {})
+        .map(([group, rows]) => rows && rows[2] ? ({ group, ...rows[2] }) : null)
+        .filter(r => r && r.PJ > 0)
+        .sort((a,b) => b.Pts - a.Pts || b.DG - a.DG || b.GF - a.GF || a.order - b.order)
+        .slice(0,8);
+
+      return {
+        provisionalQualifiers: [...direct, ...bestThirds.map(r => r.team)],
+        bestThirds
+      };
+    }
+
+    function applyOnlyPlayedProvisionalRules() {
+      const provisional = getOnlyPlayedProvisionalQualifiers(currentData.standings || {});
+      currentData.provisionalQualifiers = provisional.provisionalQualifiers;
+      currentData.bestThirds = provisional.bestThirds;
+    }
+
+    function isBestThird(group, team) {
+      return (currentData.bestThirds || []).some(r => r.group === group && normalizeText(r.team) === normalizeText(team));
+    }
+
+    function standingsRowClass(group, row) {
+      if (row.PJ > 0 && row.Pos <= 2) return 'qualified-row';
+      if (row.PJ > 0 && isBestThird(group, row.team)) return 'third-row';
+      return '';
     }
 
     async function loadResultadosFromBackend() {
@@ -455,14 +481,21 @@
         <article class="card group-card">
           <div class="group-head"><h3>Grupo ${group}</h3><span>${rows.filter(r=>r.PJ>0).length} equipos con partidos</span></div>
           <table><thead><tr><th>Pos.</th><th>Equipo</th><th class="num">PJ</th><th class="num">GF</th><th class="num">GC</th><th class="num">DG</th><th class="num">Pts</th></tr></thead><tbody>
-            ${rows.map(r=>`<tr class="${r.Pos<=2?'qualified-row':(r.Pos===3?'third-row':'')}"><td><strong>${r.Pos}º</strong></td><td>${teamName(r.team)}</td><td class="num">${r.PJ}</td><td class="num">${r.GF}</td><td class="num">${r.GC}</td><td class="num">${r.DG}</td><td class="num"><strong>${r.Pts}</strong></td></tr>`).join("")}
+            ${rows.map(r=>`<tr class="${standingsRowClass(group, r)}"><td><strong>${r.Pos}º</strong></td><td>${teamName(r.team)}</td><td class="num">${r.PJ}</td><td class="num">${r.GF}</td><td class="num">${r.GC}</td><td class="num">${r.DG}</td><td class="num"><strong>${r.Pts}</strong></td></tr>`).join("")}
           </tbody></table>
         </article>`).join("");
     }
     function renderQualifiers() {
-      const all = `<div class="mini-card"><h4>Listado completo (${currentData.provisionalQualifiers.length})</h4>${list(currentData.provisionalQualifiers)}</div>`;
-      const best = `<div class="mini-card"><h4>8 mejores terceros</h4><ul class="team-list">${currentData.bestThirds.map(r=>`<li>${teamName(r.team)} <span class="muted">Grupo ${r.group}, ${r.Pts} pts, DG ${r.DG}</span></li>`).join("")}</ul></div>`;
-      const byGroup = Object.entries(currentData.standings).map(([g, rows])=>`<div class="mini-card"><h4>Grupo ${g}</h4><p><span class="pill">1º-2º</span> ${rows.slice(0,2).map(r=>teamName(r.team)).join(", ")}</p><p><span class="pill gold">3º</span> ${teamName(rows[2].team)}</p></div>`).join("");
+      const qualifiers = currentData.provisionalQualifiers || [];
+      const bestThirds = currentData.bestThirds || [];
+      const empty = '<p class="muted">Todavía no hay equipos con partidos jugados suficientes para aparecer aquí.</p>';
+      const all = `<div class="mini-card"><h4>Listado completo (${qualifiers.length})</h4>${qualifiers.length ? list(qualifiers) : empty}</div>`;
+      const best = `<div class="mini-card"><h4>8 mejores terceros</h4>${bestThirds.length ? `<ul class="team-list">${bestThirds.map(r=>`<li>${teamName(r.team)} <span class="muted">Grupo ${r.group}, ${r.Pts} pts, DG ${r.DG}</span></li>`).join("")}</ul>` : empty}</div>`;
+      const byGroup = Object.entries(currentData.standings).map(([g, rows])=>{
+        const direct = rows.slice(0,2).filter(r => r.PJ > 0);
+        const third = rows[2] && rows[2].PJ > 0 && isBestThird(g, rows[2].team) ? rows[2] : null;
+        return `<div class="mini-card"><h4>Grupo ${g}</h4><p><span class="pill">1º-2º</span> ${direct.length ? direct.map(r=>teamName(r.team)).join(", ") : '<span class="muted">Sin clasificados provisionales</span>'}</p><p><span class="pill gold">3º</span> ${third ? teamName(third.team) : '<span class="muted">Sin tercer clasificado provisional</span>'}</p></div>`;
+      }).join("");
       document.getElementById("qualifiers-list").innerHTML = `<div class="subcards">${all}${best}${byGroup}</div>`;
     }
     function calculateScores() {
@@ -501,7 +534,7 @@
       document.getElementById('kpi-groups').textContent = Object.keys(currentData.standings).length;
       document.getElementById('kpi-qualifiers').textContent = currentData.provisionalQualifiers.length;
     }
-    function renderAll() { renderKpis(); renderScoring(); renderResults(); renderStandings(); renderQualifiers(); renderProvisionalScores(); renderPeople(); }
+    function renderAll() { applyOnlyPlayedProvisionalRules(); refreshOficiales(); renderKpis(); renderScoring(); renderResults(); renderStandings(); renderQualifiers(); renderProvisionalScores(); renderPeople(); }
     refreshOficiales();
     renderAll();
     loadResultadosFromBackend();
