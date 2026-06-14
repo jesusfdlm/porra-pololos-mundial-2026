@@ -205,7 +205,7 @@
       <a href="#puntos">Clasificación provisional</a>
       <a href="#puntuacion">Sistema de puntuación</a>
       <a href="#calendario">Partidos</a>
-      <a href="#resultados">Resultados y grupos</a>
+      <a href="#resultados">Clasificaciones</a>
       <a href="#porras">Porras</a>
     </div>
   </nav>
@@ -235,13 +235,11 @@
     </section>
 
     <section id="resultados" class="section">
-      <div class="section-title"><div><h2>⚽ Resultados actuales y clasificación</h2><p>Resultados de la API, tablas provisionales por grupo y clasificados provisionales.</p></div></div>
-      <div class="grid grid-2">
-        <div class="card"><div class="card-pad"><h3 style="margin:0 0 8px">Resultados actuales</h3><p class="muted" style="margin:0">Solo aparecen partidos ya jugados/cargados.</p></div><div id="results-body"></div></div>
-        <div class="card"><div class="card-pad"><h3 style="margin:0 0 8px">Clasificados provisionales a dieciseisavos</h3><p class="muted" style="margin:0">1º y 2º de cada grupo + 8 mejores terceros.</p></div><div class="content" id="qualifiers-list"></div></div>
-      </div>
-      <div class="section-title" style="margin-top:24px"><div><h2>🌍 Clasificación de grupos</h2></div></div>
+      <div class="section-title"><div><h2>🌍 Clasificación actual de grupos</h2><p>Tablas provisionales por grupo calculadas con los partidos finalizados de la API.</p></div></div>
       <div id="standings" class="grid grid-groups"></div>
+
+      <div class="section-title" style="margin-top:28px"><div><h2>✅ Clasificados provisionales a dieciseisavos</h2><p>Solo aparecen equipos con al menos un partido jugado: 1º y 2º de cada grupo + mejores terceros disponibles.</p></div></div>
+      <div class="card"><div class="content" id="qualifiers-list"></div></div>
     </section>
 
     <section id="porras" class="section">
@@ -311,10 +309,10 @@
       "Alemania":"🇩🇪", "Curazao":"🇨🇼", "Costa de Marfil":"🇨🇮", "Ecuador":"🇪🇨",
       "Países Bajos":"🇳🇱", "Japón":"🇯🇵", "Suecia":"🇸🇪", "Túnez":"🇹🇳",
       "Bélgica":"🇧🇪", "Egipto":"🇪🇬", "Irán":"🇮🇷", "Nueva Zelanda":"🇳🇿",
-      "España":"🇪🇸", "Cabo Verde":"🇨🇻", "Arabia Saudita":"🇸🇦", "Uruguay":"🇺🇾",
+      "España":"🇪🇸", "Cabo Verde":"🇨🇻", "Cape Verde":"🇨🇻", "Cape Verde Islands":"🇨🇻", "Cabo Verde Islands":"🇨🇻", "Arabia Saudita":"🇸🇦", "Uruguay":"🇺🇾",
       "Francia":"🇫🇷", "Senegal":"🇸🇳", "Irak":"🇮🇶", "Noruega":"🇳🇴",
       "Argentina":"🇦🇷", "Argelia":"🇩🇿", "Austria":"🇦🇹", "Jordania":"🇯🇴",
-      "Portugal":"🇵🇹", "RD Congo":"🇨🇩", "DR Congo":"🇨🇩", "Uzbekistán":"🇺🇿", "Colombia":"🇨🇴",
+      "Portugal":"🇵🇹", "RD Congo":"🇨🇩", "DR Congo":"🇨🇩", "Congo DR":"🇨🇩", "Democratic Republic of Congo":"🇨🇩", "Congo, DR":"🇨🇩", "Uzbekistán":"🇺🇿", "Colombia":"🇨🇴",
       "Inglaterra":"🏴󠁧󠁢󠁥󠁮󠁧󠁿", "England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Croacia":"🇭🇷", "Ghana":"🇬🇭", "Panamá":"🇵🇦",
       "Bolivia":"🇧🇴", "Arabia Saudí":"🇸🇦", "Costa Rica":"🇨🇷", "Nueva Caledonia":"🇳🇨"
     };
@@ -353,6 +351,20 @@
       return groups;
     }
 
+    function traducirEquipo(nombre) {
+      const traducciones = {
+        "Cape Verde": "Cabo Verde",
+        "Cape Verde Islands": "Cabo Verde",
+        "Cabo Verde Islands": "Cabo Verde",
+        "DR Congo": "RD Congo",
+        "Congo DR": "RD Congo",
+        "Congo, DR": "RD Congo",
+        "Democratic Republic of Congo": "RD Congo",
+        "Congo Democratic Republic": "RD Congo"
+      };
+      return traducciones[nombre] || nombre;
+    }
+
     function normalizaPartido(p) {
       const homeGoals = Number(p.golesLocal ?? p.homeGoals ?? p.localGoals);
       const awayGoals = Number(p.golesVisitante ?? p.awayGoals ?? p.visitanteGoals);
@@ -365,8 +377,8 @@
         estado,
         fase: p.fase || p.stage || '',
         group: p.grupo || p.group,
-        home: p.local || p.home,
-        away: p.visitante || p.away,
+        home: traducirEquipo(p.local || p.home),
+        away: traducirEquipo(p.visitante || p.away),
         homeGoals,
         awayGoals,
         played,
@@ -580,7 +592,9 @@
       document.getElementById("scoring-body").innerHTML = scoring.map(row=>`<tr><td>${row.concepto}</td><td class="points">${row.puntos}</td></tr>`).join("");
     }
     function renderResults() {
-      document.getElementById("results-body").innerHTML = currentData.results.length
+      const el = document.getElementById("results-body");
+      if (!el) return;
+      el.innerHTML = currentData.results.length
         ? currentData.results.map(m=>`<div class="score-card"><div><div class="pill blue">Grupo ${m.group}</div><div class="match-teams" style="margin-top:7px">${teamName(m.home)} <span class="muted">vs</span> ${teamName(m.away)}</div></div><div class="match-score">${m.score}</div></div>`).join("")
         : `<div class="card-pad muted">Todavía no hay resultados introducidos.</div>`;
     }
@@ -642,7 +656,7 @@
       document.getElementById('kpi-groups').textContent = Object.keys(currentData.standings).length;
       document.getElementById('kpi-qualifiers').textContent = currentData.provisionalQualifiers.length;
     }
-    function renderAll() { applyOnlyPlayedProvisionalRules(); refreshOficiales(); renderKpis(); renderScoring(); renderFixtures(); renderResults(); renderStandings(); renderQualifiers(); renderProvisionalScores(); renderPeople(); }
+    function renderAll() { applyOnlyPlayedProvisionalRules(); refreshOficiales(); renderKpis(); renderScoring(); renderFixtures(); renderStandings(); renderQualifiers(); renderProvisionalScores(); renderPeople(); }
     setupFixtureFilters();
     refreshOficiales();
     renderAll();
