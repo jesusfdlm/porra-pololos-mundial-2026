@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     const partidos = (data.response || [])
       .filter((item) => {
         const status = item.fixture?.status?.short;
-        return ["FT", "AET", "PEN", "LIVE", "1H", "2H", "HT"].includes(status);
+        return ["NS", "TBD", "FT", "AET", "PEN", "LIVE", "1H", "2H", "HT"].includes(status);
       })
       .map((item) => {
         const grupo =
