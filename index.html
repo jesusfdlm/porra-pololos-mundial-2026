@@ -1,4 +1,4 @@
-p<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -128,6 +128,23 @@ p<!DOCTYPE html>
     .content { padding:16px 18px; }
     .team-list { display:grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap:8px; margin:0; padding:0; list-style:none; }
     .team-list li { background:#f8fafc; border:1px solid var(--line); border-radius:12px; padding:9px 10px; font-weight:750; }
+    .team-list.points-list li { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .team-list.points-list li.hit { background:#f0fdf4; border-color:#bbf7d0; }
+    .team-list.points-list li.miss { background:#fff7ed; border-color:#fed7aa; }
+    .team-list.points-list li.pending { background:#f8fafc; border-color:var(--line); }
+    .score-badge { display:inline-flex; align-items:center; justify-content:center; border-radius:999px; padding:4px 8px; font-size:12px; font-weight:1000; white-space:nowrap; }
+    .score-badge.hit { background:#dcfce7; color:#047857; }
+    .score-badge.miss { background:#fee2e2; color:#b91c1c; }
+    .score-badge.pending { background:#e2e8f0; color:#475569; }
+    .detail-button { display:inline-flex; align-items:center; justify-content:center; border-radius:999px; padding:8px 12px; font-size:13px; font-weight:1000; text-decoration:none; background:#eaf1ff; color:#1d4ed8; border:1px solid #bfdbfe; transition:.18s ease; }
+    .detail-button:hover { transform: translateY(-1px); background:#dbeafe; }
+    .prize.hit { background:#f0fdf4; border-color:#bbf7d0; }
+    .prize.miss { background:#fff7ed; border-color:#fed7aa; }
+    .prize.pending { background:#f8fafc; border-color:var(--line); }
+    .prize strong { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+
+    .flag { display:inline-flex; align-items:center; justify-content:center; width:1.45em; min-width:1.45em; height:1em; vertical-align:-.12em; margin-right:4px; }
+    .flag img { width:1.45em; height:1em; object-fit:cover; border-radius:2px; box-shadow:0 0 0 1px rgba(15,23,42,.18); }
     .person-header {
       color:white; padding:18px;
       background: linear-gradient(135deg, #111827, #1f3b73 65%, #047857);
@@ -260,7 +277,7 @@ p<!DOCTYPE html>
     const flagMap = {
       "México":"🇲🇽", "Sudáfrica":"🇿🇦", "Corea del Sur":"🇰🇷", "República Checa":"🇨🇿", "Chequia":"🇨🇿", "Czechia":"🇨🇿",
       "Canadá":"🇨🇦", "Bosnia y Herzegovina":"🇧🇦", "Catar":"🇶🇦", "Qatar":"🇶🇦", "Suiza":"🇨🇭",
-      "Brasil":"🇧🇷", "Marruecos":"🇲🇦", "Haití":"🇭🇹", "Escocia":"🏴",
+      "Brasil":"🇧🇷", "Marruecos":"🇲🇦", "Haití":"🇭🇹", "Escocia":"🏴", "Scotland":"🏴",
       "Estados Unidos":"🇺🇸", "Paraguay":"🇵🇾", "Australia":"🇦🇺", "Turquía":"🇹🇷",
       "Alemania":"🇩🇪", "Curazao":"🇨🇼", "Costa de Marfil":"🇨🇮", "Ecuador":"🇪🇨",
       "Países Bajos":"🇳🇱", "Japón":"🇯🇵", "Suecia":"🇸🇪", "Túnez":"🇹🇳",
@@ -269,10 +286,10 @@ p<!DOCTYPE html>
       "Francia":"🇫🇷", "Senegal":"🇸🇳", "Irak":"🇮🇶", "Noruega":"🇳🇴",
       "Argentina":"🇦🇷", "Argelia":"🇩🇿", "Austria":"🇦🇹", "Jordania":"🇯🇴",
       "Portugal":"🇵🇹", "RD Congo":"🇨🇩", "DR Congo":"🇨🇩", "Uzbekistán":"🇺🇿", "Colombia":"🇨🇴",
-      "Inglaterra":"🏴", "Croacia":"🇭🇷", "Ghana":"🇬🇭", "Panamá":"🇵🇦",
+      "Inglaterra":"🏴", "England":"🏴", "Croacia":"🇭🇷", "Ghana":"🇬🇭", "Panamá":"🇵🇦",
       "Bolivia":"🇧🇴", "Arabia Saudí":"🇸🇦", "Costa Rica":"🇨🇷", "Nueva Caledonia":"🇳🇨"
     };
-    const avatarMap = { "Jesús":"🏎️", "Iván":"🧑🏻‍🦼", "Feli":"🏍️", "Sergio":"🦤", "Carlos":"🍺" };
+    const avatarMap = { "Jesús":"🦁", "Iván":"🦊", "Feli":"🐯", "Sergio":"🐺", "Carlos":"🐻" };
     let oficiales = {
       dieciseisavos: currentData.provisionalQualifiers,
       octavos: [], cuartos: [], semifinales: [], final: [],
@@ -397,6 +414,33 @@ p<!DOCTYPE html>
     function normalizeText(value) { return String(value||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9ñ ]/g,"").replace(/\s+/g," ").trim(); }
     function countMatches(predicted, official) { const officialSet = new Set((official||[]).map(normalizeText)); return (predicted||[]).filter(item=>officialSet.has(normalizeText(item))).length; }
     function prizeHit(predicted, official) { if(!official) return 0; return normalizeText(predicted)===normalizeText(official)?1:0; }
+    function slugify(value) { return normalizeText(value).replace(/ñ/g, 'n').replace(/\s+/g, '-'); }
+    function hasOfficialData(key) {
+      if (['campeon','subcampeon','tercerPuesto','balonOro','botaOro'].includes(key)) return Boolean(oficiales.premios[key]);
+      return Boolean((oficiales[key] || []).length);
+    }
+    function predictionHit(value, key) {
+      if (!hasOfficialData(key)) return null;
+      if (['campeon','subcampeon','tercerPuesto','balonOro','botaOro'].includes(key)) return prizeHit(value, oficiales.premios[key]) === 1;
+      const officialSet = new Set((oficiales[key] || []).map(normalizeText));
+      return officialSet.has(normalizeText(value));
+    }
+    function pointsBadge(value, key) {
+      const hit = predictionHit(value, key);
+      if (hit === null) return `<span class="score-badge pending">⏳ Pendiente</span>`;
+      return hit ? `<span class="score-badge hit">✅ +${puntosPorConcepto[key]}</span>` : `<span class="score-badge miss">❌ +0</span>`;
+    }
+    function predictionClass(value, key) {
+      const hit = predictionHit(value, key);
+      return hit === null ? 'pending' : hit ? 'hit' : 'miss';
+    }
+    function listWithPoints(items, key) {
+      return `<ul class="team-list points-list">${(items||[]).map(item=>`<li class="${predictionClass(item,key)}"><span>${teamName(item)}</span>${pointsBadge(item,key)}</li>`).join("")}</ul>`;
+    }
+    function hitsSummary(items, key) {
+      if (!hasOfficialData(key)) return 'pendiente';
+      return `${countMatches(items, oficiales[key])} suman`;
+    }
 
     function renderScoring() {
       document.getElementById("scoring-body").innerHTML = scoring.map(row=>`<tr><td>${row.concepto}</td><td class="points">${row.puntos}</td></tr>`).join("");
@@ -433,14 +477,24 @@ p<!DOCTYPE html>
     function medal(index) { return index===0 ? "🥇" : index===1 ? "🥈" : index===2 ? "🥉" : `${index+1}º`; }
     function renderProvisionalScores() {
       document.getElementById("provisional-body").innerHTML = calculateScores().map((row,index)=>{
-        const h=row.hits;
-        const detail=[`16avos: ${h.dieciseisavos} aciertos`, `Octavos: ${h.octavos}`, `Cuartos: ${h.cuartos}`, `Semis: ${h.semifinales}`, `Final: ${h.final}`, `Campeón: ${h.campeon}`, `Subcampeón: ${h.subcampeon}`, `3º: ${h.tercerPuesto}`, `Balón Oro: ${h.balonOro}`, `Bota Oro: ${h.botaOro}`].join(" · ");
-        return `<tr class="ranking-row"><td class="rank-medal">${medal(index)}</td><td><span style="font-size:24px">${avatarMap[row.nombre]||'👤'}</span> <span class="ranking-name">${row.nombre}</span></td><td class="total-points">${row.total}</td><td class="breakdown">${detail}</td></tr>`;
+        const target = `#porra-${slugify(row.nombre)}`;
+        return `<tr class="ranking-row"><td class="rank-medal">${medal(index)}</td><td><span style="font-size:24px">${avatarMap[row.nombre]||'👤'}</span> <span class="ranking-name">${row.nombre}</span></td><td class="total-points">${row.total}</td><td><a class="detail-button" href="${target}">Ver porra</a></td></tr>`;
       }).join("");
     }
-    function prizeCard(label, value) { return `<div class="prize"><span>${label}</span><strong>${teamName(value)}</strong></div>`; }
+    function prizeCard(label, value, key, isPlayer=false) {
+      return `<div class="prize ${predictionClass(value,key)}"><span>${label}</span><strong>${isPlayer ? value : teamName(value)} ${pointsBadge(value,key)}</strong></div>`;
+    }
     function renderPeople() {
-      document.getElementById("people").innerHTML = porras.map(p=>`<article class="card"><div class="person-header"><h3>${avatarMap[p.nombre]||'👤'} ${p.nombre}</h3><span class="pill gold">${teamName(p.premios.campeon)} campeón</span></div><details open><summary>Clasificados a dieciseisavos (${p.dieciseisavos.length})</summary><div class="content">${list(p.dieciseisavos)}</div></details><details><summary>Clasificados a octavos (${p.octavos.length})</summary><div class="content">${list(p.octavos)}</div></details><details><summary>Clasificados a cuartos (${p.cuartos.length})</summary><div class="content">${list(p.cuartos)}</div></details><details><summary>Clasificados a semifinales (${p.semifinales.length})</summary><div class="content">${list(p.semifinales)}</div></details><details><summary>Clasificados a la final (${p.final.length})</summary><div class="content">${list(p.final)}</div></details><details open><summary>Premios finales</summary><div class="content"><div class="prize-grid">${prizeCard('Campeón',p.premios.campeon)}${prizeCard('Subcampeón',p.premios.subcampeon)}${prizeCard('3º puesto',p.premios.tercerPuesto)}<div class="prize"><span>Balón de Oro</span><strong>⭐ ${p.premios.balonOro}</strong></div><div class="prize"><span>Bota de Oro</span><strong>👟 ${p.premios.botaOro}</strong></div></div></div></details></article>`).join("");
+      document.getElementById("people").innerHTML = porras.map(p=>`
+        <article class="card" id="porra-${slugify(p.nombre)}">
+          <div class="person-header"><h3>${avatarMap[p.nombre]||'👤'} ${p.nombre}</h3><span class="pill gold">${teamName(p.premios.campeon)} campeón</span></div>
+          <details open><summary>Clasificados a dieciseisavos (${p.dieciseisavos.length}) · ${hitsSummary(p.dieciseisavos,'dieciseisavos')}</summary><div class="content">${listWithPoints(p.dieciseisavos,'dieciseisavos')}</div></details>
+          <details><summary>Clasificados a octavos (${p.octavos.length}) · ${hitsSummary(p.octavos,'octavos')}</summary><div class="content">${listWithPoints(p.octavos,'octavos')}</div></details>
+          <details><summary>Clasificados a cuartos (${p.cuartos.length}) · ${hitsSummary(p.cuartos,'cuartos')}</summary><div class="content">${listWithPoints(p.cuartos,'cuartos')}</div></details>
+          <details><summary>Clasificados a semifinales (${p.semifinales.length}) · ${hitsSummary(p.semifinales,'semifinales')}</summary><div class="content">${listWithPoints(p.semifinales,'semifinales')}</div></details>
+          <details><summary>Clasificados a la final (${p.final.length}) · ${hitsSummary(p.final,'final')}</summary><div class="content">${listWithPoints(p.final,'final')}</div></details>
+          <details open><summary>Premios finales</summary><div class="content"><div class="prize-grid">${prizeCard('Campeón',p.premios.campeon,'campeon')}${prizeCard('Subcampeón',p.premios.subcampeon,'subcampeon')}${prizeCard('3º puesto',p.premios.tercerPuesto,'tercerPuesto')}<div class="prize ${predictionClass(p.premios.balonOro,'balonOro')}"><span>Balón de Oro</span><strong>⭐ ${p.premios.balonOro} ${pointsBadge(p.premios.balonOro,'balonOro')}</strong></div><div class="prize ${predictionClass(p.premios.botaOro,'botaOro')}"><span>Bota de Oro</span><strong>👟 ${p.premios.botaOro} ${pointsBadge(p.premios.botaOro,'botaOro')}</strong></div></div></div></details>
+        </article>`).join("");
     }
     function renderKpis() {
       document.getElementById('kpi-played').textContent = currentData.results.length;
