@@ -142,7 +142,9 @@
     .fixture-controls button.active { background:#0f172a; color:white; border-color:#0f172a; }
     .fixture-list { max-height: 680px; overflow:auto; }
     .fixture-day { padding:12px 16px; background:#eef6ff; color:#1e3a8a; font-weight:1000; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:1; }
-    .fixture-row { display:grid; grid-template-columns: 92px 90px 1fr auto; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--line); }
+    .fixture-row { display:grid; grid-template-columns: 92px 90px 1fr auto; gap:12px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--line); cursor:pointer; transition:.16s ease; }
+    .fixture-row:hover { background:#f8fafc; }
+    .fixture-row.active { background:#eef6ff; }
     .fixture-row:last-child { border-bottom:0; }
     .fixture-time { font-weight:1000; color:#0f172a; }
     .fixture-status { justify-self:start; }
@@ -150,6 +152,16 @@
     .fixture-teams { font-weight:900; line-height:1.35; }
     .fixture-teams .muted { font-weight:800; margin:0 5px; }
     .fixture-empty { padding:18px; color:var(--muted); }
+    .fixture-prediction { padding:14px 16px 16px; border-bottom:1px solid var(--line); background:#f8fafc; }
+    .fixture-prediction-title { margin:0 0 12px; font-weight:1000; color:#0f172a; }
+    .fixture-prediction-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px; }
+    .fixture-team-card { background:white; border:1px solid var(--line); border-radius:16px; padding:12px; }
+    .fixture-team-card h4 { margin:0 0 10px; font-size:16px; }
+    .predictor-list { display:grid; gap:8px; }
+    .predictor-row { display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--line); border-radius:12px; padding:8px 10px; font-weight:900; background:#f8fafc; }
+    .predictor-row.yes { background:#f0fdf4; border-color:#bbf7d0; }
+    .predictor-row.no { background:#fff7ed; border-color:#fed7aa; }
+    .predictor-mark { font-size:18px; line-height:1; }
     @media (max-width:700px) { .fixture-row { grid-template-columns: 74px 1fr auto; } .fixture-status { grid-column: 2 / 4; } .fixture-score { font-size:19px; } }
     .detail-button { display:inline-flex; align-items:center; justify-content:center; border-radius:999px; padding:8px 12px; font-size:13px; font-weight:1000; text-decoration:none; background:#eaf1ff; color:#1d4ed8; border:1px solid #bfdbfe; transition:.18s ease; }
     .detail-button:hover { transform: translateY(-1px); background:#dbeafe; }
@@ -553,6 +565,45 @@
       return Number.isNaN(d.getTime()) ? 9999999999999 : d.getTime();
     }
 
+    let selectedFixtureKey = '';
+
+    function fixtureKey(m) {
+      return String(m.id || `${m.group}-${m.home}-${m.away}-${m.fecha || ''}`).replace(/[^a-zA-Z0-9_-]/g, '-');
+    }
+
+    function predictionKeyForFixture(m) {
+      const stage = normalizeText(m.fase || m.stage || '');
+      if (!stage || stage.includes('group')) return { key:'dieciseisavos', label:'pasa a dieciseisavos' };
+      if (stage.includes('last 32') || stage.includes('round of 32') || stage.includes('dieciseisavos')) return { key:'octavos', label:'pasa a octavos' };
+      if (stage.includes('last 16') || stage.includes('round of 16') || stage.includes('octavos')) return { key:'cuartos', label:'pasa a cuartos' };
+      if (stage.includes('quarter') || stage.includes('cuartos')) return { key:'semifinales', label:'pasa a semifinales' };
+      if (stage.includes('semi') || stage.includes('semifinal')) return { key:'final', label:'pasa a la final' };
+      if (stage === 'final' || stage.includes('final')) return { key:'campeon', label:'gana el Mundial' };
+      return { key:'dieciseisavos', label:'pasa a dieciseisavos' };
+    }
+
+    function personPredictedTeam(person, team, key) {
+      if (key === 'campeon') return normalizeText(person.premios.campeon) === normalizeText(team);
+      return (person[key] || []).some(item => normalizeText(item) === normalizeText(team));
+    }
+
+    function fixtureTeamPredictionCard(team, key) {
+      return `<div class="fixture-team-card"><h4>${teamName(team)}</h4><div class="predictor-list">${porras.map(person => {
+        const yes = personPredictedTeam(person, team, key);
+        return `<div class="predictor-row ${yes ? 'yes' : 'no'}"><span>${avatarMap[person.nombre]||'👤'} ${person.nombre}</span><span class="predictor-mark">${yes ? '✅' : '❌'}</span></div>`;
+      }).join('')}</div></div>`;
+    }
+
+    function fixturePredictionDetail(m) {
+      const prediction = predictionKeyForFixture(m);
+      return `<div class="fixture-prediction"><p class="fixture-prediction-title">Predicción: ${prediction.label}</p><div class="fixture-prediction-grid">${fixtureTeamPredictionCard(m.home, prediction.key)}${fixtureTeamPredictionCard(m.away, prediction.key)}</div></div>`;
+    }
+
+    function toggleFixtureDetail(key) {
+      selectedFixtureKey = selectedFixtureKey === key ? '' : key;
+      renderFixtures();
+    }
+
     function renderFixtures() {
       const body = document.getElementById('fixtures-body');
       if (!body) return;
@@ -569,12 +620,14 @@
         const score = m.hasScore ? m.score : 'vs';
         const dayHeader = day !== lastDay ? `<div class="fixture-day">${day}</div>` : '';
         lastDay = day;
-        return `${dayHeader}<div class="fixture-row">
+        const key = fixtureKey(m);
+        const open = selectedFixtureKey === key;
+        return `${dayHeader}<div class="fixture-row ${open ? 'active' : ''}" onclick="toggleFixtureDetail('${key}')" role="button" tabindex="0">
           <div class="fixture-time">${formatFixtureTime(m.fecha)}</div>
           <div class="fixture-status"><span class="${status.cls}">${status.label}</span></div>
           <div class="fixture-teams">${teamName(m.home)} <span class="muted">vs</span> ${teamName(m.away)} <span class="muted">Grupo ${m.group}</span></div>
           <div class="fixture-score">${score}</div>
-        </div>`;
+        </div>${open ? fixturePredictionDetail(m) : ''}`;
       }).join('');
     }
 
