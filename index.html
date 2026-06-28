@@ -234,13 +234,16 @@
     </section>
 
     <section id="calendario" class="section">
-      <div class="section-title"><div><h2>🗓️ Partidos del Mundial</h2><p>Visualización automática con partidos jugados, en juego y futuros usando los datos de la API.</p></div></div>
+      <div class="section-title"><div><h2>🗓️ Partidos del Mundial</h2><p>Visualización automática por rondas usando los datos de la API.</p></div></div>
       <div class="card">
         <div class="fixture-controls">
-          <button type="button" class="fixture-filter active" data-filter="all">Todos</button>
-          <button type="button" class="fixture-filter" data-filter="played">Jugados</button>
-          <button type="button" class="fixture-filter" data-filter="live">En juego</button>
-          <button type="button" class="fixture-filter" data-filter="future">Futuros</button>
+          <button type="button" class="fixture-filter active" data-filter="groups">Grupos</button>
+          <button type="button" class="fixture-filter" data-filter="dieciseisavos">Dieciseisavos</button>
+          <button type="button" class="fixture-filter" data-filter="octavos">Octavos</button>
+          <button type="button" class="fixture-filter" data-filter="cuartos">Cuartos</button>
+          <button type="button" class="fixture-filter" data-filter="semis">Semis</button>
+          <button type="button" class="fixture-filter" data-filter="tercer">3er puesto</button>
+          <button type="button" class="fixture-filter" data-filter="final">Final</button>
         </div>
         <div id="fixtures-body" class="fixture-list"></div>
       </div>
@@ -1060,7 +1063,17 @@
       return `${countMatches(items, oficiales[key])} suman`;
     }
 
-    let fixtureFilter = 'all';
+    let fixtureFilter = 'groups';
+
+    const fixtureRounds = {
+      groups: { label:'Grupos', predictionKey:'dieciseisavos', predictionLabel:'pasa a dieciseisavos' },
+      dieciseisavos: { label:'Dieciseisavos', predictionKey:'octavos', predictionLabel:'pasa a octavos' },
+      octavos: { label:'Octavos', predictionKey:'cuartos', predictionLabel:'pasa a cuartos' },
+      cuartos: { label:'Cuartos', predictionKey:'semifinales', predictionLabel:'pasa a semifinales' },
+      semis: { label:'Semis', predictionKey:'final', predictionLabel:'pasa a la final' },
+      tercer: { label:'3er puesto', predictionKey:'tercerPuesto', predictionLabel:'queda 3º' },
+      final: { label:'Final', predictionKey:'campeon', predictionLabel:'gana el Mundial' }
+    };
 
     function fixtureStatus(status) {
       const s = String(status || '').toUpperCase();
@@ -1100,19 +1113,30 @@
       return String(m.id || `${m.group}-${m.home}-${m.away}-${m.fecha || ''}`).replace(/[^a-zA-Z0-9_-]/g, '-');
     }
 
-    function predictionKeyForFixture(m) {
+    function roundInfoForFixture(m) {
+      const raw = String(m.fase || m.stage || '').toLowerCase();
       const stage = normalizeText(m.fase || m.stage || '');
-      if (!stage || stage.includes('group')) return { key:'dieciseisavos', label:'pasa a dieciseisavos' };
-      if (stage.includes('last 32') || stage.includes('round of 32') || stage.includes('dieciseisavos')) return { key:'octavos', label:'pasa a octavos' };
-      if (stage.includes('last 16') || stage.includes('round of 16') || stage.includes('octavos')) return { key:'cuartos', label:'pasa a cuartos' };
-      if (stage.includes('quarter') || stage.includes('cuartos')) return { key:'semifinales', label:'pasa a semifinales' };
-      if (stage.includes('semi') || stage.includes('semifinal')) return { key:'final', label:'pasa a la final' };
-      if (stage === 'final' || stage.includes('final')) return { key:'campeon', label:'gana el Mundial' };
-      return { key:'dieciseisavos', label:'pasa a dieciseisavos' };
+
+      if (!raw && !stage) return { key:'groups', ...fixtureRounds.groups };
+      if (raw.includes('group') || stage.includes('grupo') || stage.includes('group')) return { key:'groups', ...fixtureRounds.groups };
+      if (raw.includes('last_32') || raw.includes('round_of_32') || raw.includes('round of 32') || raw.includes('last 32') || stage.includes('dieciseisavos') || stage.includes('roundof32') || stage.includes('last32')) return { key:'dieciseisavos', ...fixtureRounds.dieciseisavos };
+      if (raw.includes('last_16') || raw.includes('round_of_16') || raw.includes('round of 16') || raw.includes('last 16') || stage.includes('octavos') || stage.includes('roundof16') || stage.includes('last16')) return { key:'octavos', ...fixtureRounds.octavos };
+      if (raw.includes('quarter') || stage.includes('cuartos') || stage.includes('quarter')) return { key:'cuartos', ...fixtureRounds.cuartos };
+      if (raw.includes('semi') || stage.includes('semi') || stage.includes('semifinal')) return { key:'semis', ...fixtureRounds.semis };
+      if (raw.includes('third') || raw.includes('3rd') || stage.includes('tercer') || stage.includes('thirdplace')) return { key:'tercer', ...fixtureRounds.tercer };
+      if (raw.includes('final') || stage.includes('final')) return { key:'final', ...fixtureRounds.final };
+
+      return { key:'groups', ...fixtureRounds.groups };
+    }
+
+    function predictionKeyForFixture(m) {
+      const round = roundInfoForFixture(m);
+      return { key: round.predictionKey, label: round.predictionLabel };
     }
 
     function personPredictedTeam(person, team, key) {
       if (key === 'campeon') return normalizeText(person.premios.campeon) === normalizeText(team);
+      if (key === 'tercerPuesto') return normalizeText(person.premios.tercerPuesto) === normalizeText(team);
       return (person[key] || []).some(item => normalizeText(item) === normalizeText(team));
     }
 
@@ -1125,7 +1149,8 @@
 
     function fixturePredictionDetail(m) {
       const prediction = predictionKeyForFixture(m);
-      return `<div class="fixture-prediction"><p class="fixture-prediction-title">Predicción: ${prediction.label}</p><div class="fixture-prediction-grid">${fixtureTeamPredictionCard(m.home, prediction.key)}${fixtureTeamPredictionCard(m.away, prediction.key)}</div></div>`;
+      const round = roundInfoForFixture(m);
+      return `<div class="fixture-prediction"><p class="fixture-prediction-title">${round.label}: predicción de quién ${prediction.label}</p><div class="fixture-prediction-grid">${fixtureTeamPredictionCard(m.home, prediction.key)}${fixtureTeamPredictionCard(m.away, prediction.key)}</div></div>`;
     }
 
     function toggleFixtureDetail(key) {
@@ -1137,14 +1162,16 @@
       const body = document.getElementById('fixtures-body');
       if (!body) return;
       const fixtures = getAllFixtures().slice().sort((a,b) => fixtureSortValue(a) - fixtureSortValue(b));
-      const filtered = fixtures.filter(m => fixtureFilter === 'all' || fixtureStatus(m.estado).key === fixtureFilter);
+      const filtered = fixtures.filter(m => roundInfoForFixture(m).key === fixtureFilter);
       if (!filtered.length) {
-        body.innerHTML = `<div class="fixture-empty">No hay partidos para este filtro.</div>`;
+        const round = fixtureRounds[fixtureFilter] || { label:'esta ronda' };
+        body.innerHTML = `<div class="fixture-empty">No hay partidos para ${round.label}.</div>`;
         return;
       }
       let lastDay = '';
       body.innerHTML = filtered.map(m => {
         const status = fixtureStatus(m.estado);
+        const round = roundInfoForFixture(m);
         const day = formatFixtureDate(m.fecha);
         const score = m.hasScore ? m.score : 'vs';
         const dayHeader = day !== lastDay ? `<div class="fixture-day">${day}</div>` : '';
@@ -1154,7 +1181,7 @@
         return `${dayHeader}<div class="fixture-row ${open ? 'active' : ''}" onclick="toggleFixtureDetail('${key}')" role="button" tabindex="0">
           <div class="fixture-time">${formatFixtureTime(m.fecha)}</div>
           <div class="fixture-status"><span class="${status.cls}">${status.label}</span></div>
-          <div class="fixture-teams">${teamName(m.home)} <span class="muted">vs</span> ${teamName(m.away)} <span class="muted">Grupo ${m.group}</span></div>
+          <div class="fixture-teams">${teamName(m.home)} <span class="muted">vs</span> ${teamName(m.away)} <span class="muted">${round.label}${m.group ? ` · Grupo ${m.group}` : ''}</span></div>
           <div class="fixture-score">${score}</div>
         </div>${open ? fixturePredictionDetail(m) : ''}`;
       }).join('');
@@ -1164,6 +1191,7 @@
       document.querySelectorAll('.fixture-filter').forEach(btn => {
         btn.addEventListener('click', () => {
           fixtureFilter = btn.dataset.filter;
+          selectedFixtureKey = '';
           document.querySelectorAll('.fixture-filter').forEach(b => b.classList.toggle('active', b === btn));
           renderFixtures();
         });
