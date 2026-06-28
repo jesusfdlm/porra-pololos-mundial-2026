@@ -189,15 +189,6 @@
     .subcards { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
     .mini-card { background:#f8fafc; border:1px solid var(--line); border-radius:16px; padding:14px; }
     .mini-card h4 { margin:0 0 8px; }
-
-    .person-points { padding:14px 18px; border-top:1px solid var(--line); background:#f8fafc; }
-    .person-points-title { margin:0 0 10px; font-size:14px; font-weight:1000; color:#0f172a; }
-    .person-points-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
-    .round-points { background:white; border:1px solid var(--line); border-radius:14px; padding:9px 10px; }
-    .round-points span { display:block; color:var(--muted); font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.03em; }
-    .round-points strong { display:block; margin-top:4px; font-size:16px; font-weight:1000; color:#0f172a; }
-    .round-points.pending strong { color:#64748b; font-size:13px; }
-
     @media print {
       body { background:white; } .hero,.nav,.hero-actions { display:none; } main { padding:0; } .section-title { color:#0f172a; } .card { box-shadow:none; break-inside:avoid; } details:not([open]) .content { display:block; } summary::after { display:none; }
     }
@@ -226,7 +217,7 @@
       <a href="#puntos">Clasificación provisional</a>
       <a href="#puntuacion">Sistema de puntuación</a>
       <a href="#calendario">Partidos</a>
-      <a href="#resultados">Clasificaciones</a>
+      <a href="#resultados">Rondas</a>
       <a href="#porras">Porras</a>
     </div>
   </nav>
@@ -259,11 +250,19 @@
     </section>
 
     <section id="resultados" class="section">
-      <div class="section-title"><div><h2>🌍 Clasificación actual de grupos</h2><p>Tablas provisionales por grupo calculadas con los partidos finalizados de la API.</p></div></div>
-      <div id="standings" class="grid grid-groups"></div>
-
-      <div class="section-title" style="margin-top:28px"><div><h2>✅ Clasificados provisionales a dieciseisavos</h2><p>Solo aparecen equipos con al menos un partido jugado: 1º y 2º de cada grupo + mejores terceros disponibles.</p></div></div>
-      <div class="card"><div class="content" id="qualifiers-list"></div></div>
+      <div class="section-title"><div><h2>🔄 Rondas</h2><p>Clasificaciones de grupos y equipos clasificados en cada ronda según los datos actuales de la API.</p></div></div>
+      <div class="card">
+        <div class="fixture-controls round-controls">
+          <button type="button" class="round-filter active" data-filter="groups">Grupos</button>
+          <button type="button" class="round-filter" data-filter="dieciseisavos">Dieciseisavos</button>
+          <button type="button" class="round-filter" data-filter="octavos">Octavos</button>
+          <button type="button" class="round-filter" data-filter="cuartos">Cuartos</button>
+          <button type="button" class="round-filter" data-filter="semis">Semis</button>
+          <button type="button" class="round-filter" data-filter="tercer">3er puesto</button>
+          <button type="button" class="round-filter" data-filter="final">Final</button>
+        </div>
+        <div id="rounds-body"></div>
+      </div>
     </section>
 
     <section id="porras" class="section">
@@ -878,14 +877,136 @@
     const puntosPorConcepto = { dieciseisavos:20, octavos:40, cuartos:40, semifinales:60, final:50, campeon:20, subcampeon:20, tercerPuesto:20, botaOro:25, balonOro:25 };
 
 
+    function uniqueTeams(items) {
+      const seen = new Set();
+      return (items || []).filter(item => {
+        const key = normalizeText(item);
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function fixturesForRoundKey(roundKey) {
+      return getAllFixtures().filter(m => roundInfoForFixture(m).key === roundKey);
+    }
+
+    function roundParticipants(roundKey) {
+      return uniqueTeams(fixturesForRoundKey(roundKey).flatMap(m => [m.home, m.away]).filter(Boolean));
+    }
+
+    function matchWinner(m) {
+      if (!m || !m.played || !Number.isFinite(m.homeGoals) || !Number.isFinite(m.awayGoals) || m.homeGoals === m.awayGoals) return '';
+      return m.homeGoals > m.awayGoals ? m.home : m.away;
+    }
+
+    function matchLoser(m) {
+      if (!m || !m.played || !Number.isFinite(m.homeGoals) || !Number.isFinite(m.awayGoals) || m.homeGoals === m.awayGoals) return '';
+      return m.homeGoals > m.awayGoals ? m.away : m.home;
+    }
+
+    function winnersFromRound(roundKey) {
+      return uniqueTeams(fixturesForRoundKey(roundKey).map(matchWinner).filter(Boolean));
+    }
+
+    function losersFromRound(roundKey) {
+      return uniqueTeams(fixturesForRoundKey(roundKey).map(matchLoser).filter(Boolean));
+    }
+
+    function getTeamsThatReachedRound(key) {
+      if (key === 'dieciseisavos') {
+        const last32Participants = roundParticipants('dieciseisavos');
+        return last32Participants.length ? last32Participants : (currentData.provisionalQualifiers || []);
+      }
+      if (key === 'octavos') {
+        const participants = roundParticipants('octavos');
+        return participants.length ? participants : winnersFromRound('dieciseisavos');
+      }
+      if (key === 'cuartos') {
+        const participants = roundParticipants('cuartos');
+        return participants.length ? participants : winnersFromRound('octavos');
+      }
+      if (key === 'semifinales') {
+        const participants = roundParticipants('semis');
+        return participants.length ? participants : winnersFromRound('cuartos');
+      }
+      if (key === 'final') {
+        const participants = roundParticipants('final');
+        return participants.length ? participants : winnersFromRound('semis');
+      }
+      return [];
+    }
+
+    function getChampionTeam() {
+      const finalWinner = winnersFromRound('final')[0];
+      return finalWinner || '';
+    }
+
+    function getRunnerUpTeam() {
+      const finalLoser = losersFromRound('final')[0];
+      return finalLoser || '';
+    }
+
+    function getThirdPlaceTeam() {
+      const thirdWinner = winnersFromRound('tercer')[0];
+      return thirdWinner || '';
+    }
+
+    function isTeamInList(team, items) {
+      const key = normalizeText(team);
+      return (items || []).some(item => normalizeText(item) === key);
+    }
+
+    function teamLostInFixtureRound(team, fixtureRoundKey) {
+      const key = normalizeText(team);
+      return fixturesForRoundKey(fixtureRoundKey).some(m =>
+        m.played && (normalizeText(m.home) === key || normalizeText(m.away) === key) && normalizeText(matchLoser(m)) === key
+      );
+    }
+
+    function groupStageLooksComplete() {
+      const groupFixtures = getAllFixtures().filter(m => roundInfoForFixture(m).key === 'groups');
+      return Boolean(groupFixtures.length) && groupFixtures.every(m => m.played);
+    }
+
+    function isEliminatedBeforeTargetRound(team, key) {
+      if (!team) return false;
+      if (key === 'dieciseisavos') {
+        return groupStageLooksComplete() && hasOfficialData('dieciseisavos') && !isTeamInList(team, oficiales.dieciseisavos);
+      }
+
+      const knockoutChecks = {
+        octavos: ['dieciseisavos'],
+        cuartos: ['dieciseisavos', 'octavos'],
+        semifinales: ['dieciseisavos', 'octavos', 'cuartos'],
+        final: ['dieciseisavos', 'octavos', 'cuartos', 'semis'],
+        campeon: ['dieciseisavos', 'octavos', 'cuartos', 'semis', 'final'],
+        subcampeon: ['dieciseisavos', 'octavos', 'cuartos', 'semis', 'final'],
+        tercerPuesto: ['dieciseisavos', 'octavos', 'cuartos', 'semis']
+      };
+
+      if (hasOfficialData('dieciseisavos') && ['octavos','cuartos','semifinales','final','campeon','subcampeon','tercerPuesto'].includes(key) && !isTeamInList(team, oficiales.dieciseisavos)) {
+        return true;
+      }
+
+      return (knockoutChecks[key] || []).some(roundKey => teamLostInFixtureRound(team, roundKey));
+    }
+
+
     function refreshOficiales() {
       oficiales = {
-        dieciseisavos: currentData.provisionalQualifiers || [],
-        octavos: [],
-        cuartos: [],
-        semifinales: [],
-        final: [],
-        premios: { campeon:"", subcampeon:"", tercerPuesto:"", balonOro:"", botaOro:"" }
+        dieciseisavos: getTeamsThatReachedRound('dieciseisavos'),
+        octavos: getTeamsThatReachedRound('octavos'),
+        cuartos: getTeamsThatReachedRound('cuartos'),
+        semifinales: getTeamsThatReachedRound('semifinales'),
+        final: getTeamsThatReachedRound('final'),
+        premios: {
+          campeon: getChampionTeam(),
+          subcampeon: getRunnerUpTeam(),
+          tercerPuesto: getThirdPlaceTeam(),
+          balonOro:"",
+          botaOro:""
+        }
       };
     }
 
@@ -1039,7 +1160,7 @@
     }
 
     function flag(team) { return flagMap[team] || "🏳️"; }
-    function teamName(team) { return `<span class="flag">${flag(team)}</span> ${team}`; }
+    function teamName(team) { return team ? `<span class="flag">${flag(team)}</span> ${team}` : `<span class="muted">Equipo pendiente</span>`; }
     function list(items) { return `<ul class="team-list">${(items||[]).map(item=>`<li>${teamName(item)}</li>`).join("")}</ul>`; }
     function normalizeText(value) { return String(value||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9ñ ]/g,"").replace(/\s+/g," ").trim(); }
     function countMatches(predicted, official) { const officialSet = new Set((official||[]).map(normalizeText)); return (predicted||[]).filter(item=>officialSet.has(normalizeText(item))).length; }
@@ -1050,10 +1171,13 @@
       return Boolean((oficiales[key] || []).length);
     }
     function predictionHit(value, key) {
-      if (!hasOfficialData(key)) return null;
-      if (['campeon','subcampeon','tercerPuesto','balonOro','botaOro'].includes(key)) return prizeHit(value, oficiales.premios[key]) === 1;
-      const officialSet = new Set((oficiales[key] || []).map(normalizeText));
-      return officialSet.has(normalizeText(value));
+      if (['campeon','subcampeon','tercerPuesto','balonOro','botaOro'].includes(key)) {
+        if (hasOfficialData(key)) return prizeHit(value, oficiales.premios[key]) === 1;
+        return isEliminatedBeforeTargetRound(value, key) ? false : null;
+      }
+      if (hasOfficialData(key) && isTeamInList(value, oficiales[key])) return true;
+      if (isEliminatedBeforeTargetRound(value, key)) return false;
+      return null;
     }
     function pointsBadge(value, key) {
       const hit = predictionHit(value, key);
@@ -1068,8 +1192,10 @@
       return `<ul class="team-list points-list">${(items||[]).map(item=>`<li class="${predictionClass(item,key)}"><span>${teamName(item)}</span>${pointsBadge(item,key)}</li>`).join("")}</ul>`;
     }
     function hitsSummary(items, key) {
-      if (!hasOfficialData(key)) return 'pendiente';
-      return `${countMatches(items, oficiales[key])} suman`;
+      const hitCount = (items || []).filter(item => predictionHit(item, key) === true).length;
+      const missCount = (items || []).filter(item => predictionHit(item, key) === false).length;
+      const pendingCount = (items || []).filter(item => predictionHit(item, key) === null).length;
+      return `${hitCount} aciertos · ${missCount} fallos · ${pendingCount} pendientes`;
     }
 
     let fixtureFilter = 'groups';
@@ -1217,8 +1343,8 @@
         ? currentData.results.map(m=>`<div class="score-card"><div><div class="pill blue">Grupo ${m.group}</div><div class="match-teams" style="margin-top:7px">${teamName(m.home)} <span class="muted">vs</span> ${teamName(m.away)}</div></div><div class="match-score">${m.score}</div></div>`).join("")
         : `<div class="card-pad muted">Todavía no hay resultados introducidos.</div>`;
     }
-    function renderStandings() {
-      document.getElementById("standings").innerHTML = Object.entries(currentData.standings).map(([group, rows])=>`
+    function standingsHtml() {
+      return Object.entries(currentData.standings).map(([group, rows])=>`
         <article class="card group-card">
           <div class="group-head"><h3>Grupo ${group}</h3><span>${rows.filter(r=>r.PJ>0).length} equipos con partidos</span></div>
           <table><thead><tr><th>Pos.</th><th>Equipo</th><th class="num">PJ</th><th class="num">GF</th><th class="num">GC</th><th class="num">DG</th><th class="num">Pts</th></tr></thead><tbody>
@@ -1226,19 +1352,94 @@
           </tbody></table>
         </article>`).join("");
     }
-    function renderQualifiers() {
+
+    function qualifiersCardsHtml() {
       const qualifiers = currentData.provisionalQualifiers || [];
       const bestThirds = currentData.bestThirds || [];
       const empty = '<p class="muted">Todavía no hay equipos con partidos jugados suficientes para aparecer aquí.</p>';
-      const all = `<div class="mini-card"><h4>Listado completo (${qualifiers.length})</h4>${qualifiers.length ? list(qualifiers) : empty}</div>`;
+      const all = `<div class="mini-card"><h4>Clasificados a dieciseisavos (${qualifiers.length})</h4>${qualifiers.length ? list(qualifiers) : empty}</div>`;
       const best = `<div class="mini-card"><h4>8 mejores terceros</h4>${bestThirds.length ? `<ul class="team-list">${bestThirds.map(r=>`<li>${teamName(r.team)} <span class="muted">Grupo ${r.group}, ${r.Pts} pts, DG ${r.DG}</span></li>`).join("")}</ul>` : empty}</div>`;
       const byGroup = Object.entries(currentData.standings).map(([g, rows])=>{
         const direct = rows.slice(0,2).filter(r => r.PJ > 0);
-        const third = rows[2] && rows[2].PJ > 0 && isBestThird(g, rows[2].team) ? rows[2] : null;
-        return `<div class="mini-card"><h4>Grupo ${g}</h4><p><span class="pill">1º-2º</span> ${direct.length ? direct.map(r=>teamName(r.team)).join(", ") : '<span class="muted">Sin clasificados provisionales</span>'}</p><p><span class="pill gold">3º</span> ${third ? teamName(third.team) : '<span class="muted">Sin tercer clasificado provisional</span>'}</p></div>`;
+        const third = rows[2] && rows[2].PJ > 0 && isBestThird(g, rows[2].team) ? [rows[2]] : [];
+        const teams = [...direct, ...third].map(r=>r.team);
+        return `<div class="mini-card"><h4>Grupo ${g}</h4>${teams.length ? list(teams) : empty}</div>`;
       }).join("");
-      document.getElementById("qualifiers-list").innerHTML = `<div class="subcards">${all}${best}${byGroup}</div>`;
+      return `<div class="subcards">${all}${best}${byGroup}</div>`;
     }
+
+    function renderStandings() {
+      const el = document.getElementById("standings");
+      if (el) el.innerHTML = standingsHtml();
+    }
+
+    function renderQualifiers() {
+      const el = document.getElementById("qualifiers-list");
+      if (el) el.innerHTML = qualifiersCardsHtml();
+    }
+
+    let roundFilter = 'groups';
+
+    function qualifiedLabelForRound(roundKey) {
+      const labels = {
+        groups: 'Clasificados definitivos a dieciseisavos',
+        dieciseisavos: 'Clasificados a octavos',
+        octavos: 'Clasificados a cuartos',
+        cuartos: 'Clasificados a semifinales',
+        semis: 'Clasificados a la final',
+        tercer: 'Ganador del 3er puesto',
+        final: 'Campeón'
+      };
+      return labels[roundKey] || 'Clasificados';
+    }
+
+    function qualifiedTeamsForRoundView(roundKey) {
+      if (roundKey === 'groups') return currentData.provisionalQualifiers || [];
+      if (roundKey === 'dieciseisavos') return oficiales.octavos || [];
+      if (roundKey === 'octavos') return oficiales.cuartos || [];
+      if (roundKey === 'cuartos') return oficiales.semifinales || [];
+      if (roundKey === 'semis') return oficiales.final || [];
+      if (roundKey === 'tercer') return oficiales.premios.tercerPuesto ? [oficiales.premios.tercerPuesto] : [];
+      if (roundKey === 'final') return oficiales.premios.campeon ? [oficiales.premios.campeon] : [];
+      return [];
+    }
+
+    function roundMatchesHtml(roundKey) {
+      const matches = fixturesForRoundKey(roundKey).slice().sort((a,b) => fixtureSortValue(a) - fixtureSortValue(b));
+      if (!matches.length) return '<p class="muted">Todavía no hay partidos programados para esta ronda.</p>';
+      return `<div class="card"><table><thead><tr><th>Fecha</th><th>Partido</th><th class="num">Resultado</th></tr></thead><tbody>${matches.map(m=>{
+        const result = m.hasScore ? m.score : 'vs';
+        return `<tr><td>${formatFixtureDate(m.fecha)} · ${formatFixtureTime(m.fecha)}</td><td>${m.home && m.away ? `${teamName(m.home)} <span class="muted">vs</span> ${teamName(m.away)}` : '<span class="muted">Equipos pendientes</span>'}</td><td class="num"><strong>${result}</strong></td></tr>`;
+      }).join("")}</tbody></table></div>`;
+    }
+
+    function renderRounds() {
+      const body = document.getElementById('rounds-body');
+      if (!body) return;
+      const round = fixtureRounds[roundFilter] || fixtureRounds.groups;
+      if (roundFilter === 'groups') {
+        body.innerHTML = `
+          <div class="content"><h3 style="margin:0 0 12px">Clasificaciones de grupos</h3><div class="grid grid-groups">${standingsHtml()}</div></div>
+          <div class="content"><h3 style="margin:0 0 12px">${qualifiedLabelForRound('groups')}</h3>${qualifiersCardsHtml()}</div>`;
+        return;
+      }
+      const qualified = qualifiedTeamsForRoundView(roundFilter);
+      const empty = '<p class="muted">Todavía no hay clasificados confirmados en esta ronda.</p>';
+      body.innerHTML = `
+        <div class="content"><h3 style="margin:0 0 12px">${round.label}</h3><p class="muted" style="margin-top:0">${qualifiedLabelForRound(roundFilter)} según los resultados actuales.</p><div class="mini-card">${qualified.length ? list(qualified) : empty}</div></div>
+        <div class="content"><h3 style="margin:0 0 12px">Partidos de ${round.label}</h3>${roundMatchesHtml(roundFilter)}</div>`;
+    }
+
+    function setupRoundFilters() {
+      document.querySelectorAll('.round-filter').forEach(btn => {
+        btn.addEventListener('click', () => {
+          roundFilter = btn.dataset.filter;
+          document.querySelectorAll('.round-filter').forEach(b => b.classList.toggle('active', b === btn));
+          renderRounds();
+        });
+      });
+    }
+
     function calculateScores() {
       return porras.map(p=>{
         const hits = {
@@ -1258,30 +1459,10 @@
     function prizeCard(label, value, key, isPlayer=false) {
       return `<div class="prize ${predictionClass(value,key)}"><span>${label}</span><strong>${isPlayer ? value : teamName(value)} ${pointsBadge(value,key)}</strong></div>`;
     }
-    function personRoundPoints(p) {
-      const items = [
-        { label:'Dieciseisavos', key:'dieciseisavos', hits:countMatches(p.dieciseisavos, oficiales.dieciseisavos) },
-        { label:'Octavos', key:'octavos', hits:countMatches(p.octavos, oficiales.octavos) },
-        { label:'Cuartos', key:'cuartos', hits:countMatches(p.cuartos, oficiales.cuartos) },
-        { label:'Semis', key:'semifinales', hits:countMatches(p.semifinales, oficiales.semifinales) },
-        { label:'Final', key:'final', hits:countMatches(p.final, oficiales.final) },
-        { label:'Campeón', key:'campeon', hits:prizeHit(p.premios.campeon, oficiales.premios.campeon) },
-        { label:'Subcampeón', key:'subcampeon', hits:prizeHit(p.premios.subcampeon, oficiales.premios.subcampeon) },
-        { label:'3º puesto', key:'tercerPuesto', hits:prizeHit(p.premios.tercerPuesto, oficiales.premios.tercerPuesto) },
-        { label:'Balón de Oro', key:'balonOro', hits:prizeHit(p.premios.balonOro, oficiales.premios.balonOro) },
-        { label:'Bota de Oro', key:'botaOro', hits:prizeHit(p.premios.botaOro, oficiales.premios.botaOro) }
-      ];
-      return `<div class="person-points"><p class="person-points-title">Puntos por ronda</p><div class="person-points-grid">${items.map(item=>{
-        const pending = !hasOfficialData(item.key);
-        const points = item.hits * puntosPorConcepto[item.key];
-        return `<div class="round-points ${pending ? 'pending' : ''}"><span>${item.label}</span><strong>${pending ? 'Pendiente' : `+${points}`}</strong></div>`;
-      }).join('')}</div></div>`;
-    }
     function renderPeople() {
       document.getElementById("people").innerHTML = porras.map(p=>`
         <article class="card" id="porra-${slugify(p.nombre)}">
           <div class="person-header"><h3>${avatarMap[p.nombre]||'👤'} ${p.nombre}</h3><span class="pill gold">${teamName(p.premios.campeon)} campeón</span></div>
-          ${personRoundPoints(p)}
           <details><summary>Clasificados a dieciseisavos (${p.dieciseisavos.length}) · ${hitsSummary(p.dieciseisavos,'dieciseisavos')}</summary><div class="content">${listWithPoints(p.dieciseisavos,'dieciseisavos')}</div></details>
           <details><summary>Clasificados a octavos (${p.octavos.length}) · ${hitsSummary(p.octavos,'octavos')}</summary><div class="content">${listWithPoints(p.octavos,'octavos')}</div></details>
           <details><summary>Clasificados a cuartos (${p.cuartos.length}) · ${hitsSummary(p.cuartos,'cuartos')}</summary><div class="content">${listWithPoints(p.cuartos,'cuartos')}</div></details>
@@ -1295,8 +1476,9 @@
       document.getElementById('kpi-groups').textContent = Object.keys(currentData.standings).length;
       document.getElementById('kpi-qualifiers').textContent = currentData.provisionalQualifiers.length;
     }
-    function renderAll() { applyOnlyPlayedProvisionalRules(); refreshOficiales(); renderKpis(); renderScoring(); renderFixtures(); renderStandings(); renderQualifiers(); renderProvisionalScores(); renderPeople(); }
+    function renderAll() { applyOnlyPlayedProvisionalRules(); refreshOficiales(); renderKpis(); renderScoring(); renderFixtures(); renderRounds(); renderProvisionalScores(); renderPeople(); }
     setupFixtureFilters();
+    setupRoundFilters();
     refreshOficiales();
     renderAll();
     loadResultadosFromBackend();
