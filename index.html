@@ -932,7 +932,7 @@
     }
 
     function buildCurrentDataFromBackend(data) {
-      const allFixtures = (data.partidos || []).map(normalizaPartido).filter(m => m.group && m.home && m.away);
+      const allFixtures = (data.partidos || []).map(normalizaPartido).filter(m => m.home && m.away);
       const played = allFixtures.filter(m => m.played);
       const groupTeams = getGroupTeams();
       const standings = {};
