@@ -92,7 +92,7 @@
     .grid { display:grid; gap:16px; }
     .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .grid-groups { grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); }
+    .grid-groups { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
     @media (max-width: 850px) { .grid-2,.grid-3 { grid-template-columns:1fr; } }
     table { width:100%; border-collapse: collapse; }
     th { background:#0f172a; color:white; text-align:left; padding:12px 14px; font-size:13px; }
@@ -113,6 +113,9 @@
       background: linear-gradient(135deg, #0f172a, #1e3a8a); color:white;
     }
     .group-head h3 { margin:0; font-size:20px; }
+    .group-card table { font-size:12px; }
+    .group-card th, .group-card td { padding:8px 7px; white-space:nowrap; }
+    .group-card th:nth-child(2), .group-card td:nth-child(2) { white-space:normal; min-width:112px; }
     .qualified-row td:first-child { border-left: 5px solid var(--accent); }
     .third-row td:first-child { border-left: 5px solid var(--gold); }
     .ranking-row:first-child td { background:#f8fffb; }
@@ -1346,7 +1349,7 @@
     function standingsHtml() {
       return Object.entries(currentData.standings).map(([group, rows])=>`
         <article class="card group-card">
-          <div class="group-head"><h3>Grupo ${group}</h3><span>${rows.filter(r=>r.PJ>0).length} equipos con partidos</span></div>
+          <div class="group-head"><h3>Grupo ${group}</h3></div>
           <table><thead><tr><th>Pos.</th><th>Equipo</th><th class="num">PJ</th><th class="num">GF</th><th class="num">GC</th><th class="num">DG</th><th class="num">Pts</th></tr></thead><tbody>
             ${rows.map(r=>`<tr class="${standingsRowClass(group, r)}"><td><strong>${r.Pos}º</strong></td><td>${teamName(r.team)}</td><td class="num">${r.PJ}</td><td class="num">${r.GF}</td><td class="num">${r.GC}</td><td class="num">${r.DG}</td><td class="num"><strong>${r.Pts}</strong></td></tr>`).join("")}
           </tbody></table>
@@ -1366,6 +1369,17 @@
         return `<div class="mini-card"><h4>Grupo ${g}</h4>${teams.length ? list(teams) : empty}</div>`;
       }).join("");
       return `<div class="subcards">${all}${best}${byGroup}</div>`;
+    }
+
+    function qualifiersByGroupOnlyHtml() {
+      const empty = '<p class="muted">Todavía no hay clasificados confirmados en este grupo.</p>';
+      const byGroup = Object.entries(currentData.standings).map(([g, rows])=>{
+        const direct = rows.slice(0,2).filter(r => r.PJ > 0);
+        const third = rows[2] && rows[2].PJ > 0 && isBestThird(g, rows[2].team) ? [rows[2]] : [];
+        const teams = [...direct, ...third].map(r=>r.team);
+        return `<div class="mini-card"><h4>Grupo ${g}</h4>${teams.length ? list(teams) : empty}</div>`;
+      }).join("");
+      return `<div class="subcards">${byGroup}</div>`;
     }
 
     function renderStandings() {
@@ -1420,7 +1434,7 @@
       if (roundFilter === 'groups') {
         body.innerHTML = `
           <div class="content"><h3 style="margin:0 0 12px">Clasificaciones de grupos</h3><div class="grid grid-groups">${standingsHtml()}</div></div>
-          <div class="content"><h3 style="margin:0 0 12px">${qualifiedLabelForRound('groups')}</h3>${qualifiersCardsHtml()}</div>`;
+          <div class="content"><h3 style="margin:0 0 12px">Clasificados por grupo</h3>${qualifiersByGroupOnlyHtml()}</div>`;
         return;
       }
       const qualified = qualifiedTeamsForRoundView(roundFilter);
