@@ -189,6 +189,15 @@
     .subcards { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
     .mini-card { background:#f8fafc; border:1px solid var(--line); border-radius:16px; padding:14px; }
     .mini-card h4 { margin:0 0 8px; }
+
+    .person-points { padding:14px 18px; border-top:1px solid var(--line); background:#f8fafc; }
+    .person-points-title { margin:0 0 10px; font-size:14px; font-weight:1000; color:#0f172a; }
+    .person-points-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
+    .round-points { background:white; border:1px solid var(--line); border-radius:14px; padding:9px 10px; }
+    .round-points span { display:block; color:var(--muted); font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.03em; }
+    .round-points strong { display:block; margin-top:4px; font-size:16px; font-weight:1000; color:#0f172a; }
+    .round-points.pending strong { color:#64748b; font-size:13px; }
+
     @media print {
       body { background:white; } .hero,.nav,.hero-actions { display:none; } main { padding:0; } .section-title { color:#0f172a; } .card { box-shadow:none; break-inside:avoid; } details:not([open]) .content { display:block; } summary::after { display:none; }
     }
@@ -1249,16 +1258,36 @@
     function prizeCard(label, value, key, isPlayer=false) {
       return `<div class="prize ${predictionClass(value,key)}"><span>${label}</span><strong>${isPlayer ? value : teamName(value)} ${pointsBadge(value,key)}</strong></div>`;
     }
+    function personRoundPoints(p) {
+      const items = [
+        { label:'Dieciseisavos', key:'dieciseisavos', hits:countMatches(p.dieciseisavos, oficiales.dieciseisavos) },
+        { label:'Octavos', key:'octavos', hits:countMatches(p.octavos, oficiales.octavos) },
+        { label:'Cuartos', key:'cuartos', hits:countMatches(p.cuartos, oficiales.cuartos) },
+        { label:'Semis', key:'semifinales', hits:countMatches(p.semifinales, oficiales.semifinales) },
+        { label:'Final', key:'final', hits:countMatches(p.final, oficiales.final) },
+        { label:'Campeón', key:'campeon', hits:prizeHit(p.premios.campeon, oficiales.premios.campeon) },
+        { label:'Subcampeón', key:'subcampeon', hits:prizeHit(p.premios.subcampeon, oficiales.premios.subcampeon) },
+        { label:'3º puesto', key:'tercerPuesto', hits:prizeHit(p.premios.tercerPuesto, oficiales.premios.tercerPuesto) },
+        { label:'Balón de Oro', key:'balonOro', hits:prizeHit(p.premios.balonOro, oficiales.premios.balonOro) },
+        { label:'Bota de Oro', key:'botaOro', hits:prizeHit(p.premios.botaOro, oficiales.premios.botaOro) }
+      ];
+      return `<div class="person-points"><p class="person-points-title">Puntos por ronda</p><div class="person-points-grid">${items.map(item=>{
+        const pending = !hasOfficialData(item.key);
+        const points = item.hits * puntosPorConcepto[item.key];
+        return `<div class="round-points ${pending ? 'pending' : ''}"><span>${item.label}</span><strong>${pending ? 'Pendiente' : `+${points}`}</strong></div>`;
+      }).join('')}</div></div>`;
+    }
     function renderPeople() {
       document.getElementById("people").innerHTML = porras.map(p=>`
         <article class="card" id="porra-${slugify(p.nombre)}">
           <div class="person-header"><h3>${avatarMap[p.nombre]||'👤'} ${p.nombre}</h3><span class="pill gold">${teamName(p.premios.campeon)} campeón</span></div>
-          <details open><summary>Clasificados a dieciseisavos (${p.dieciseisavos.length}) · ${hitsSummary(p.dieciseisavos,'dieciseisavos')}</summary><div class="content">${listWithPoints(p.dieciseisavos,'dieciseisavos')}</div></details>
+          ${personRoundPoints(p)}
+          <details><summary>Clasificados a dieciseisavos (${p.dieciseisavos.length}) · ${hitsSummary(p.dieciseisavos,'dieciseisavos')}</summary><div class="content">${listWithPoints(p.dieciseisavos,'dieciseisavos')}</div></details>
           <details><summary>Clasificados a octavos (${p.octavos.length}) · ${hitsSummary(p.octavos,'octavos')}</summary><div class="content">${listWithPoints(p.octavos,'octavos')}</div></details>
           <details><summary>Clasificados a cuartos (${p.cuartos.length}) · ${hitsSummary(p.cuartos,'cuartos')}</summary><div class="content">${listWithPoints(p.cuartos,'cuartos')}</div></details>
           <details><summary>Clasificados a semifinales (${p.semifinales.length}) · ${hitsSummary(p.semifinales,'semifinales')}</summary><div class="content">${listWithPoints(p.semifinales,'semifinales')}</div></details>
           <details><summary>Clasificados a la final (${p.final.length}) · ${hitsSummary(p.final,'final')}</summary><div class="content">${listWithPoints(p.final,'final')}</div></details>
-          <details open><summary>Premios finales</summary><div class="content"><div class="prize-grid">${prizeCard('Campeón',p.premios.campeon,'campeon')}${prizeCard('Subcampeón',p.premios.subcampeon,'subcampeon')}${prizeCard('3º puesto',p.premios.tercerPuesto,'tercerPuesto')}<div class="prize ${predictionClass(p.premios.balonOro,'balonOro')}"><span>Balón de Oro</span><strong>⭐ ${p.premios.balonOro} ${pointsBadge(p.premios.balonOro,'balonOro')}</strong></div><div class="prize ${predictionClass(p.premios.botaOro,'botaOro')}"><span>Bota de Oro</span><strong>👟 ${p.premios.botaOro} ${pointsBadge(p.premios.botaOro,'botaOro')}</strong></div></div></div></details>
+          <details><summary>Premios finales</summary><div class="content"><div class="prize-grid">${prizeCard('Campeón',p.premios.campeon,'campeon')}${prizeCard('Subcampeón',p.premios.subcampeon,'subcampeon')}${prizeCard('3º puesto',p.premios.tercerPuesto,'tercerPuesto')}<div class="prize ${predictionClass(p.premios.balonOro,'balonOro')}"><span>Balón de Oro</span><strong>⭐ ${p.premios.balonOro} ${pointsBadge(p.premios.balonOro,'balonOro')}</strong></div><div class="prize ${predictionClass(p.premios.botaOro,'botaOro')}"><span>Bota de Oro</span><strong>👟 ${p.premios.botaOro} ${pointsBadge(p.premios.botaOro,'botaOro')}</strong></div></div></div></details>
         </article>`).join("");
     }
     function renderKpis() {
